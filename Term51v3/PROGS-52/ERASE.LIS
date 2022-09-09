@@ -1,0 +1,41 @@
+10     REM ***********************************
+20     REM * ERASE zum loeschen von EEPROM's *
+30     REM *   (C) H.-J. Boehling 21.08.98   *
+40     REM ***********************************
+50     PRINT "Ich treffe Vorbereitungen zum loeschen des EEPROM."
+60    MTOP=5FFFH :  REM RAM-Speicher ab 6000H (obere 8 Kbyte) sichern
+70     REM ===== RAM mit FFH fuellen ==========
+80     FOR I=6000H TO 7FFFH : XBY(I)=0FFH :  NEXT I
+90     REM ===== Register laden ===============
+100    REM Quelle = 6000H bis 7FFFH (RAM) nach 
+110    REM Ziel   = 8000H bis 9FFFH (EEPROM)
+120    REM Laenge = 2000H Bytes (8 Kbytes)
+130   DBY(19H)=000H :  REM Quelle LSB
+140   DBY(1BH)=060H :  REM Quelle HSB
+150   DBY(18H)=0FFH :  REM Ziel - 1 LSB
+160   DBY(1AH)=07FH :  REM Ziel - 1 HSB
+170   DBY(1EH)=000H :  REM Laenge LSB
+180   DBY(1FH)=020H :  REM Laenge HSB
+190   DBY(26H)=DBY(26H).AND.0F7H :  REM Standartprogrammierung 
+200   DBY(40H)=0DCH :  REM Programmierimpulslaenge 10 ms LSB
+210   DBY(41H)=000H :  REM Programmierimpulslaenge 10 ms HSB
+220   XBY(128H)=0DCH :  REM Programmierimpulslaenge fuer PROG LSB
+230   XBY(129H)=000H :  REM Programmierimpulslaenge fuer PROG HSB
+240    REM ===== Abfrage: Loeschen ? ========
+250    PRINT "Soll das EEPROM jetzt geloerscht werden ? (J/N) :",
+260   K=GET :  IF K=0 THEN 260
+270    PRINT CHR(K)
+280    IF K>90 THEN K=K-32 :  REM Kleinbuchstaben nach Gross
+290    IF K=ASC(J) THEN 310
+300    GOTO 400
+310    PRINT "Ich loesche das EEPROM! Bitte zwei Minuten Geduld." :  PGM 
+320    REM ===== Fehlerueberpruefung ========
+330    PRINT 
+340    IF (DBY(30).OR.DBY(31))=0 THEN 380
+350   H=DBY(1AH) : L=DBY(18H) : HL=H*256+L
+360    PRINT "EEPROM nicht leer auf Adresse :", :  PH1. HL
+370    GOTO 400
+380    PRINT "Beim loschen sind keine Fehler aufgetreten."
+390    PRINT "EEPROM ist leer!"
+400    REM ===== Ende =======================
+410   MTOP=7FFFH :  REM RAM freigeben

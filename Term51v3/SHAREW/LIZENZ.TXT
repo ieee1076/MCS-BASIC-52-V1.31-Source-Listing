@@ -1,0 +1,64 @@
+
+
+
+                         Terminal-MCS-51 Shareware-V08.99
+                         --------------------------------
+                         http://home.nexgo.de/H.Boehling
+              
+               (C) Copyright 1997/98/99 Hans-JÅrgen Bîhling 
+                                        Rankestr. 8a
+                                        D-40474 DÅsseldorf
+          Lizenzhinweise                e-mail: H-Boehling@gmx.de
+          --------------  
+
+         Dieses  Programm  ist  Shareware.  Das  hei·t, es darf in Form des
+         Originalarchives   weitergegeben   werden.   Die  Verbreitung  auf
+         Disketten,   CDROM,   im   Internet   oder  sonstigen  Medien  ist
+         ausdrÅcklich  erlaubt!  Eine VerÑnderung des Originalarchives oder
+         auch nur von Programmteilen ist ohne meine schriftliche Zustimmung
+         nicht   gestattet.   Das  Shareware-Programm  darf  privat  unein-
+         geschrÑnkt benutzt werden.
+
+         Die  Shareware-Version  unterstÅzt  nicht  das  umnummerieren  von
+         MCS-51-BASIC-Zeilennummern.  Diese Funktion wird ausschlieslich in
+         der registrierten Vollversion unterstÅtzt! Durch die Registrierung 
+         erhalten  Sie  die  neueste  und  uneingeschrÑnkte Vollversion mit 
+         alleinigem und privatem Nutzungsrecht (siehe REGISTER.TXT).
+
+         ACHTUNG:  Der  Autor gewÑhrt keinerlei Garantie fÅr Fehlerfreiheit
+         des  Programms.  Im  Falle von Datenverlust oder BeschÑdigung wird
+         keinerlei  Verantwortung  vom Autor Åbernommen. Die Nutzung dieses
+         Programms geschieht  auf  eigene  Gefahr!  Au·erdem ist allein der
+         Anwender   fÅr   die  RechtmÑ·igkeit  der  durch  seine  Benutzung
+         verursachten  Datenduplikation,  -manipulation,  -vernichtung  und
+         Sonstiges verantwortlich.
+
+         Dieses Programm wurde nach bestem Wissen und Gewissen programmiert
+         und  vielfach getestet. Trotzdem lassen sich Programmierfehler nie
+         ganz  ausschlie·en.  FÅr  Hinweise auf Fehler bin ich deshalb sehr
+         dankbar.
+
+         Das  Originalarchiv  in  Form  der   selbstentpackenden  ZIP-Datei
+         TERM-51.EXE besteht aus folgenden Dateien:
+
+
+         FILE_ID .DIZ  - Kurzbeschreibung von Terminal-MCS-51
+         LIZENZ  .TXT  - Lizenzbedingungen fÅr die Benutzung (dieser Text)
+         TERM-51D.TXT  - Dokumentation zu Terminal-MCS-51 deutsch
+         TERM-51E.TXT  - Dokumentation zu Terminal-MCS-51 englisch
+         TERM-51D.EXE  - Terminal-MCS-51 deutsche Version
+         TERM-51E.EXE  - Terminal-MCS-51 englische Version
+         TERM-51D.INI  - Terminal-MCS-51 Initialisierungsdatei deutsch 
+         TERM-51E.INI  - Terminal-MCS-51 Initialisierungsdatei englisch
+         EDIT    .BAT  - Batch-Datei fÅr den Editoraufruf 
+         EPROMMER.LIS  - MCS-51-BASIC-Programm EPROM-Brenner
+         EPROMMER.TXT  - Beschreibung zu EPROMMER.LIS
+         ROMCOPY .LIS  - MCS-51-BASIC-Programm MCS-51-Interpreter kopieren
+         ROMCOPY .TXT  - Beschreibung zu ROMCOPY.LIS
+         REGISTER.TXT  - Terminal-MCS-51 Registrierformular
+
+         Die Datei TERM-51.EXE wird einfach unter DOS  aufgerufen  und  die 
+         oben aufgefÅhrten Datein entpacken sich selbstÑndig  im  aktuellen
+         Verzeichnis!  Weiteres  entnehmen Sie dann bitte der Dokumentation
+         zu Terminal-MCS-51 (TERM-51D.TXT).
+

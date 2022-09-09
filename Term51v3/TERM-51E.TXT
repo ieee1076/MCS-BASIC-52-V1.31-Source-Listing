@@ -1,0 +1,59 @@
+
+
+
+            ฺฤฤาฤฤฟ              
+               บ                    ึฤฤฤ  ท
+               บ  ERMINAL ฤ MCS ฤ   ำฤท   บ
+               ะ                  ณ   บ   บ  (C) H.-J. B”hling 1997 till 00
+                                  ภฤฤฤฝ   ะฤ     Rankestr. 8a
+               V03.00                            D-40474 Dsseldorf
+                                                 Germany
+
+
+                               e-mail: H-Boehling@gmx.de
+                      homepage: http://home.nexgo.de/H.Boehling
+                
+              ีออออออออออออออออออออออออออออออออออออออออออออออออออออออธ
+              ณ  A terminal-programme  for all MCS-51-BASIC-systems  ณฑฑฑ
+              ิออออออออออออออออออออออออออออออออออออออออออออออออออออออพฑฑฑ  
+                 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ  
+                                                              
+
+         The programme  Terminal-MCS-51  is a terminal-programme for MS-DOS 
+         computers, which  has  been  particular written for the using with 
+         MCS-51-BASIC   computers.  It  offers  you  the   possibility   of 
+         comfortable MCS-51-BASIC programme  development with the following 
+         capacity:
+
+          - Easy loading and saving of MCS-51-BASIC-programmes
+          - Renumbering of MCS-51-BASIC-programmes 
+            (only in registered version)  
+          - Comfortable MCS-51-BASIC-line-editor
+          - Arbitrary ASCII-editor easy to integrate
+
+         Terminal-MCS-51 needs the following minimal Hardware-requirements:
+
+          - A MS-DOS-computer
+          - Any video-card
+          - A floppy- or hard-disk
+          - A serial interface (COM1: or COM2:)
+          - A MSC-51-BASIC-system (conected to the serial interface)
+
+          MCS-51-BASIC
+          ------------
+         The MCS-51-BASIC-interpreter  has  been  developed  by the company 
+         INTEL  particularly  for the  8052-AH microcontroler and fits with 
+         its size of only 8 Kbyte into  the internal read only memory (ROM) 
+         of this processor. Meanwhile INTELฎ had placed this interpreter as 
+         freeware in the public  domain  and  the  commented sourcecode and 
+         HEX-file  can  be  found in the Internet! But also the interpreter 
+         can  copy  itself with a MCS-51-BASIC-programme out of an existing 
+         8052-AH  into  an  EPROM.  This  copy  will  then  also run with a 
+         reasonable 8032-CPU. I  have  developed  a  MCS-51-BASIC-computer, 
+         using  a  80C52  CPU which has been published in the electronics & 
+         computer  magazine  "ELEKTOR",  edition  2/98 and 3/98. The sum of 
+         commands  of  MCS-51-BASIC  is  a  bit  reduced  in  the   string-
+         processing,  but  still  comfortabele.  Unfortunately  the command 
+         RENUM  for  renumbering  the  MCS-51-BASIC-linenumbers  have  been 
+         economized. The MCS-51-BASIC-line-editor makes only the delete of 
+         the last character of the lineinput possible.

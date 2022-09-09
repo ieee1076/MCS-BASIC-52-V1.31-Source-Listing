@@ -1,0 +1,382 @@
+
+
+
+            ⁄ƒƒ“ƒƒø              
+               ∫                    ÷ƒƒƒ  ∑
+               ∫  ERMINAL ƒ MCS ƒ   ”ƒ∑   ∫
+               –                  ≥   ∫   ∫  (C) H.-J. Bîhling 1997 bis 00
+                                  ¿ƒƒƒΩ   –ƒ     Rankestr. 8a
+               V03.00                            40474 DÅsseldorf
+
+
+                              e-mail: H-Boehling@gmx.de
+                       homepage:  http://home.nexgo.de/H.Boehling   
+
+              ’ÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕ∏
+              ≥  Ein Terminalprogramm fÅr alle MCS-51-BASIC-Systeme  ≥±±±
+              ‘ÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕæ±±±  
+                 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±  
+                                                              
+         Das   Programm   Terminal-MCS-51   ist  ein  Terminalprogramm  fÅr
+         MS-DOS-Rechner,   welches   speziell   fÅr   die   Verwendung  mit
+         MCS-51-BASIC  geschrieben  wurde  und  ermîglicht  die komfortable
+         MCS-51-BASIC-Programmentwicklung mit folgenden Leistungsmerkmalen:
+
+          - Einfaches Laden und Speichern von MCS-51-BASIC-Programmen
+          - Umnummerieren von MCS-51-BASIC-Programmen
+          - Integrierter Zeileneditor fÅr MCS-51-BASIC-Zeilen
+          - Einbinden eines beliebigen ASCII-Editors
+
+          Hardware-Voraussetzungen
+          ------------------------
+
+         Terminal-MCS-51   benîtigt   folgende   minimale  Hardware-Voraus-
+         setzungen:
+
+          - Einen MS-DOS-Rechner 
+          - Beliebige Grafigkarte 
+          - Ein Flopy- oder Festplattenlaufwerk
+          - Eine serielle Schnittstelle (COM1: oder COM2:)
+          - Ein MCS-51-BASIC-System
+            (angeschlossen an die serielle Schnittstelle)
+
+  
+          MCS-51-BASIC
+          ------------
+
+         Der  MCS-51-BASIC-Interpreter wurde von der Fa. Intel speziell fÅr
+         den  Mikrokontroller 8052-AH  entwickelt und pa·t mit seiner Grî·e
+         von  nur  8  Kbyte in den internen ROM-Speicher dieses Prozessors.
+         Mittlerweile  wurde  dieser  Interpreter  von  der  Fa.  Intel als
+         Freeware  zur  VerfÅgung  gestellt. Der  Interpreter   kann   sich
+         selbst  mit  einem  MCS-51-BASIC-Programm  aus  einem  vorhandenen 
+         8052-AH  in  ein  EPROM  kopieren  (aber  auch  als  kommentierter 
+         Soucecode aus dem  Internet  gezogen  werden!). Dieser Interpreter 
+         lÑuft   dann   auch  mit  einer  8032-CPU.  Vom  Autor  wurde  ein 
+         80C32-BASIC-Steuer-Computer entwickelt, welcher in der Zeitschrift
+         "Elektor"  Ausgaben  2/98  und  3/98   verîffentlicht  wurde.  Der 
+         Befehlsumfang  von  MCS-51-BASIC  ist  vor  allem  im  Bereich der
+         String-Verarbeitung    etwas    eingeschrÑnkt    jedoch   durchaus
+         komfortabel.  Leider  wurde   auch   der   Befehl  "RENUMBER"  zum 
+         umnummerieren der BASIC-Zeilennummern eingespart. 
+
+                                       - 1 -
+
+
+
+          Arbeiten mit Terminal-MCS-51 
+          ----------------------------
+
+         Zum   Ausprobieren   kann   Terminal-MCS-51  direkt  von  Diskette
+         gestartet  werden,  spÑter  sollten  die  Dateien TERM-51D.EXE und
+         TERM-51D.INI   in   ein   Unterverzeichnis   zusammen   mit  ihren
+         MCS-BASIC-Listings  kopiert  werden.  Von  Diskette wird Terminal-
+         MCS-51 mit:
+
+         A:>term-51d 
+
+         aufgerufen.  Terminal-MCS-51  lÑd  die TERM-51D.INI Datei und geht
+         direkt  in  den  Terminal-Modus.  Danach  mu·  wie Åblich erst die
+         Leertaste   betÑtigt   werden   um   die   Baudrate-Erkennung  von
+         MCS-51-BASIC zu ermîglichen. Das MCS-51-System antwortet mit:
+
+         *MCS-51(tm) BASIC V1.1*
+         READY
+         >
+
+         Am unteren Bildschirmrand wird eine Infozeile der Funktionstasten-
+         belegung  angezeigt.  öber  die  Funktionstasten  -F1-  bis  -F10-
+         kînnen alle weiteren Funktionen aufgerufen werden:
+
+
+           -F1-  LIST   Listen von MCS-51-BASIC-Programmen.
+
+
+           -F2-  RUN    Starten von MCS-51-BASIC-Programmen.
+
+
+           -F3-  LOAD   Laden von MCS-51-BASIC-Programmen.
+
+
+           -F4-  SAVE   Speichern von MCS-51-BASIC-Programmen.
+
+
+           -F5-  STOP   Anhalten von MCS-51-BASIC-Programmen.
+
+
+           -F6-  CONT   Fortsetzen von MCS-51-BASIC-Programmen.
+
+
+           -F7-  INFO   Anzeigen von ProgrammlÑnge, freiem Speicher 
+                        u. gesamter Speichergrî·e (LEN, FREE, MTOP).
+
+           -F8-  EDIT   Editieren von einzelnen MCS-51-BASIC-Zeilen oder
+                        Aufruf eines Texteditors Åber die Datei EDIT.BAT
+                        mit öbergabe des aktuellen Dateinamens. 
+           -F9-  RENUM  Umnummerieren von MCS-51-BASIC-Programmen.
+                        (Nicht in der Shareware-Version!)
+
+          -F10-  MENU   Einstellen von COM-Port und Baudrate, Dateinamen 
+                        Ñndern, Datei senden, Protokolldatei îffnen und
+                        schlie·en, RENUMBER-Werte einstellen, DOS-Shell
+                        und beenden des Programms.
+
+
+
+
+                                       - 2 -
+
+
+
+          MCS-51-BASIC-Programme laden
+          ----------------------------
+
+         Durch   drÅcken   der  Taste  -F3-  wird  ein  laufendes  Programm
+         angehalten  und  Terminal-MCS-51  zeigt ein Inhaltsverzeichnis des
+         aktuellen  Pfad und  fragt nach dem zu ladenden Programm. Achtung!
+         Ein  eventuell  im  Speicher des MCS-51-BASIC-Rechners vorhandenes
+         Programm   wird   bei   Eingabe  eines  existierenden  Dateinamens
+         gelîscht!  Wird der  Dateiname  ohne Extension eingegeben, so wird
+         die  Extension  "LIS"  fÅr  Listing  vorausgesetzt  und angehangen
+         (Diese Standard-Extension  lÑ·t  sich  in  der  TERM-51D.INI-Datei
+         beliebig  Ñndern).  Das  Programm lîscht nun zunÑchst den Speicher
+         des MCS-51-BASIC-Systems durch den Befehl "NEW" und ÅbertrÑgt dann
+         das   gewÑhlte  File.  Das  Echo  des  BASIC-Rechners  wird  dabei
+         angezeigt.
+
+
+          MCS-51-BASIC-Programme speichern
+          --------------------------------
+
+         Durch   drÅcken   der  Taste  -F4-  wird  ein  laufendes  Programm
+         angehalten,  Terminal-MCS-51  zeigt  ein   Inhaltsverzeichnis  des
+         aktuellen  Pfad  und  fragt  nach  dem  Dateinamen  fÅr  das abzu-
+         speichernde  Programm.  Auch  hier  gilt:  Wird der Dateiname ohne
+         Extension  eingegeben, so wird die Standard-Extension fÅr Listings
+         vorausgesetzt  und  angehangen.  Existiert  die  eingegebene Datei
+         bereits,   so   folgt   eine  Sicherheitsabfrage.  Danach  schickt
+         Terminal-MCS-51  den  Befehl "LIST" an das MCS-51-BASIC-System und
+         speichert  das  empfangene  Programm  unter dem zuvor eingegebenen
+         Dateinamen.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       - 3 -
+
+
+           MCS-51-Programme editieren
+           --------------------------
+
+         MCS-51-BASIC  bietet  in Verbindung mit einem  standard  Terminal-
+         programm nur einen einfachen Zeileneditor mit welchem sich nur das
+	  letzte  Zeichen  der Eingabezeile lîschen lÑ·t. Ist die Zeile erst
+	  einmal  mit  der  RETURN-Taste abgeschlossen, so lÑ·t sie sich nur
+	  noch  durch  erneutes  eingeben öberschreiben und somit verÑndern.
+	  Wer so ein grî·eres Programm schreiben mîchte, wird daran  schnell
+	  verzweifeln. Terminal-MCS-51  bietet  drei  verschiedene  Mîglich-
+	  keiten eine MCS-51-BASIC-Zeile zu editieren:
+          
+         1.) Es unterstÅtzt den einfachen  MCS-51-Zeileneditor  denn  durch 
+             drÅcken  der  Backspace-Taste  wird  das  letzte  Zeichen  der
+             Eingabezeile gelîscht.
+             
+         2.) Auch das Editieren bereits abgeschlossener Zeilen ist mîglich!
+             Nach drÅcken der Taste -F8- fragt Terminal-MCS-51  nach  einer 
+             Zeilennummer. Die eingegebene  Zeilennummer  wird  angefordert
+             und kann dann in gewohnter Weise mit folgenden Tasten editiert 
+             werden:
+                 
+             Cursor rechts,  Cursor links,  End,  Home,  Backspace, Delete,
+             Insert.
+             
+             Return beendet  den  Zeileneditor  und sendet die Zeile wieder 
+             zum MCS-51-BASIC-System.
+             
+         3.) Wird  die  Frage  nach  der  Zeilennummer  mit  der  "P"-Taste 
+             beantwortet,  wird   das   im   MCS-51-BASIC-Sytem  vorhandene
+             Programm unter dem aktuellen Dateinamen (*1) abgespeichert und
+             danach die DOS-Stapeldatei EDIT.BAT aufgerufen, der  Dateiname
+             des MCS-51-BASIC-Programms wird dabei als Parameter Åbergeben.
+             
+         *1) Vor  dem   Editieren  eines   MCS-51-BASIC-Programms  mu·  ein
+             aktueller  Programmname vorhanden sein! Dieser wird beim Laden
+             oder Speichern abgespeichert oder kann im MenÅ eingegeben oder
+             auch  verÑndert  werden.  Durch  drÅcken  der  Taste -F8-  und 
+             anschlie·endem   -P-   wird   dann   ein   laufendes  Programm
+             angehalten    und    die   Stapelverarbeitungsdatei   EDIT.BAT 
+             aufgerufen.  So  kann   jeder   seinen   Lieblings-Editor  zur 
+             MCS-51-BASIC-Programmierung  verwenden! HierfÅr eignet sich im
+             Prinzip  jeder  Editor,  wenn er den Text als "Text  fÅr  DOS"
+             also reinen ASCII-Code abspeichern kann. Zum Beispiel auch der
+             unter DOS 6.2 vorhandene Editor. Die Batch-Datei EDIT.BAT  mu·
+             dazu nur folgende Befehle enthalten:
+
+             @echo off
+             c:\dos\edit.exe %1
+
+             Nach dem Editieren wird der Programmtext automatisch wieder in
+             den MCS-51-BASIC-Computer Åbertragen. Dazu wird ein spezielles
+             Textlade-Protokoll verwendet, da nach dem  Senden  einer jeden
+             BASIC-Zeile  auf  den  Prompt  des  MCS-51-Computers  gewartet
+             werden mu·.
+
+
+
+
+                                       - 4 -
+
+
+
+          MCS-51-Programme umnummerieren (Nur in der Vollversion)
+          ------------------------------
+
+         Vor   dem   Umnummerieren  eines  MCS-51-BASIC-Programms  mu·  ein
+         aktueller  Programmname  vorhanden  sein!  Dieser  wird beim Laden
+         oder Speichern angelegt oder kann im MenÅ   eingegeben  oder  auch
+         verÑndert werden. Durch drÅcken  der  Taste  -F9-  wird  dann  ein
+         laufendes Programm angehalten und Terminal-MCS-51 speichert das im
+         MCS-51-BASIC-System  vorhandene Programm unter diesem Namen.  Auch
+         eine  Sicherungsdatei mit der Extension "BAK"  wird  unter  diesem
+         Namen angelegt (die Extension lÑ·t sich in der  TERM-51D.INI-Datei
+         beliebig  Ñndern). Danach startet das Umnummerieren mit den in der
+         TERM-51D.INI-Datei oder dem  MenÅ   unter Punkt -7-  eingestellten
+         Werten fÅr Schrittweite und  erste  Zeilennummer.  Terminal-MCS-51
+         durchsucht  das  Programm  nach SprÅngen und berechnet diese unter
+         Beachtung  der MCS-51-BASIC-Syntaxregeln neu. So werden scheinbare
+         Sprunganweisungen  in  Strings oder hinter REM-Anweisungen selbst-
+         verstÑndlich  nicht  geÑndert!  Achtung  die Originaldatei ist fÅr
+         alle  FÑlle  bis zum nÑchsten Umnummerieren in der Sicherungsdatei
+         mit  der  Endung  "BAK" gesichert. Das umnummerierte Programm wird
+         abgespeichert und wieder in das MCS-51-BASIC-System geladen.
+
+
+
+          Das Terminal-MCS-51 MenÅ
+          ------------------------
+	    
+         öber Taste -F10- gelangt man in das MenÅ von Terminal-MCS-51, dort
+         lassen  sich  das  COM-Port  und  die  Baudrate  einstellen,   der 
+         Dateiname der aktuellen Programmdatei Ñndern, eine  Datei  senden,
+         eine Protokolldatei îffnen oder schlie·en,  die RENUMBER-Werte fÅr
+         die erste Zeilennummer und den Zeilenabstand  einstellen, die DOS-
+         Shell aufrufen und Terminal-MCS-51 beenden.
+         Mit den MenÅpunkten -4-  bis  -5-  (Datei  senden,  Protokolldatei
+         îffnen  oder  schlie·en)   lÑst   sich   z.B.   ein  EPROM-Brenner
+         verwirklichen  bei  welchem  die  zu  brennenden  Daten   in   das 
+         MCS-51-BASIC-System   Åbertragen oder  vom  BASIC-System  gesendet
+         werden. Terminal-MCS-51 ÅbertrÑgt  eine  Datei  dabei  zeilenweise
+         und   wartet   nach   jeder   Zeile   auf   ein   ">"-Zeichn   vom
+         MCS-51-BASIC-System.  Im  Prinzip  unterscheidet  sich  die  Funk-
+         tion "Datei senden"  nur  gering von der Funktion "Programm laden"
+         (Taste -F3- im Terminal-Modus)  jedoch  wird  hier  ein  laufendes 
+         Programm nicht abgebrochen und gelîscht! Mit "Datei senden" lassen
+         sich deshalb auch MCS-51-BASIC-Programme laden, und  weil  ein  im 
+         Speicher   des   MCS-51-BASIC-System  vorhandenes  Programm  nicht
+         gelîscht wird, kann man auf diese Art auch Progamme mischen!
+
+         Alle  Einstellungen  im  Terminal-MCS-51-MenÅ  gelten  nur fÅr die 
+         momentane Sitzung beim nÑchsten Starten von Terminal-MCS-51 werden
+         wieder   die   Standardeinstellungen  aus  der  TERM-51D.INI-Datei
+         eingestellt.
+
+
+
+
+
+
+
+
+
+                                       - 5 -
+
+
+          Die TERM-51D.INI-DATEI
+          ----------------------
+
+         In  der  Datei  TERM-51D.INI  kînnen die Standardeinstellungen von
+         Terminal-MCS-51  mit  einem  ASCII-Editor eingestellt werden. Dies
+         sind im einzelnen:
+
+          - Das Kommunikationsport (COM1: oder COM2:)
+          - Die Baudrate (300 bis 9600 Baud)
+          - Die Schrittweite beim Umnummerieren (nur in der Vollversion)
+          - Die erste Zeilennummer beim Umnummerieren (nur Vollwersion)
+          - Die Dateinamenserweiterung fÅr die MCS-51-BASIC-Listings
+          - Die Dateinamenerweiterung fÅr Sicherungsdateien
+          - Die Dateinamenerweiterung fÅr Protokolldateien
+
+         Achtung! Die Einstellungen in der  TERM-51D.INI-Datei  werden  von
+         Terminal-MCS-51  nicht  vollstÑndig  ÅberprÅft  und   kînnen   bei
+         unzulÑssigen  Werten  zu  Fehlfunktionen  fÅhren!  Auf  jeden Fall
+         sollte  vor   énderungen   eine   Sicherungskopie   der   original
+         TERM-51D.INI-Datei angelegt werden. Wird die INI-Datei verÑndert,
+         so ist darauf  zu  achten,  da·  hinter den einzelnen Werten nicht
+         versehentlich ein (unsichtbares)  Leerzeichen  angefÅgt  wird,  da
+         sonst   beim   Laden   ein   INI-Datei-Fehler   auftritt.  Weitere
+         ErklÑrungen zu den Einstellmîglichkeiten  finden   sich   in   dem
+         Bemerkungszeilen der TERM-51D.INI-Datei. 
+
+ 
+           Probleme mit Terminal-MCS-51 ?
+           ------------------------------
+
+         Der  Autor  gewÑhrt  keinerlei  Garantie  fÅr  Fehlerfreiheit  des
+         Programms.  Im  Falle  von  Datenverlust  oder  BeschÑdigung  wird
+         keinerlei  Verantwortung  vom Autor Åbernommen. Die Nutzung dieses
+         Programms geschieht auf eigene Gefahr!  Dieses Programm wurde nach
+         bestem  Wissen  und  Gewissen  programmiert und vielfach getestet.
+         Trotzdem  lassen sich Programmierfehler nie ganz ausschlie·en. FÅr
+         Hinweise auf Fehler bin ich deshalb sehr dankbar.
+
+         Sollte   bei  hoher  Baudrate-Einstellung  und  langsamen  Floppy-
+         Laufwerk   die   Fehlermeldung   "Kommunikationsbuffer   öberlauf"
+         erscheinen,  mu·  entweder  auf  der  Festplatte gearbeitet werden
+         oder eine geringere Baudrate eingestellt werden.
+
+
+          Registrierung von Terminal-MCS-51
+          ---------------------------------
+
+         Zur Registrierung benutzen Sie bitte das  Formular  in  der  Datei
+         REGISTER.TXT und senden es an:
+
+                            Hans-JÅrgen Bîhling 
+                            Rankestr. 8a
+                            40474 DÅsseldorf
+
+
+
+
+
+
+
+                                       - 6 -
+
+

@@ -1,0 +1,32 @@
+10     REM *******************************
+20     REM *      RENUM-Testprogramm     *
+30     REM *   H.-J. Boehling 09.10.97   *
+40     REM *******************************
+50     REM
+60     REM ===== Diese Spruenge werden geaendert ========== 
+70     REM ===== Bemerkungen hinter REM nicht !  ==========
+81     GOSUB 110 :  REM GOSUB 110   darf nicht geaendert werden.
+82     GOTO 120 :  REM  GOTO 120    darf nicht geaendert werden.  
+83     ONERR 130 :  REM ONERR 130   darf nicht geaendert werden.  
+84     ONEX1 140 :  REM ONEX1 140   darf nicht geaendert werden.  
+85     ONTIME TIME+1,150 :  REM ONTIME TIME+1,150 
+86     IF I=10 THEN 160 ELSE 170 :  REM IF I = 10 THEN 160 ELSE 170
+87     REM
+88     REM ===== Diese Spruenge werden geaendert ========== 
+89     REM ===== Strings in Anfuehrungszeichen nicht ! ====
+91     PRINT " GOSUB 110  darf nicht geaendert werden." :  GOSUB 110
+92     PRINT " GOTO 120   darf nicht geaendert werden." :  GOTO 120
+93     PRINT " ONERR 130  darf nicht geaendert werden." :  ONERR 130
+94     PRINT " ONEX1 140  darf nicht geaendert werden." :  ONEX1 140
+95     PRINT " ONTIME TESTVAR+2,150 " :  ONTIME TESTVAR+2,150
+96     PRINT " IF I = 10 THEN 160 ELSE 170 " :  IF I=10 THEN 160 ELSE 170
+97     REM
+100    REM ----- Diese Zeilen sind Sprungziele fuer -------
+110    REM GOSUB
+120    REM GOTO
+130    REM ONERR
+140    REM ONEX1
+150    REM ONTIME
+160    REM THEN
+170    REM ELSE
+200    END 

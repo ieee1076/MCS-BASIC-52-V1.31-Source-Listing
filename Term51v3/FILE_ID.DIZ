@@ -1,0 +1,6 @@
+* Terminal-MCS-51, ein Terminalprogramm * 
+*    fÅr alle MCS-51-BASIC-Systeme      *
+*  (C) H.-J. Bîhling Vollversion 03.00  * 
+- Einfaches Programmladen und Speichern 
+- Umnummerrieren von MCS-51-BASIC-Zeilen
+- Einbinden eines beliebigen ASCII-Editor

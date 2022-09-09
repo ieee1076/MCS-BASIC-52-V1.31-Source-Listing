@@ -1,0 +1,31 @@
+          Das MCS-51-BASIC-Programm EPROMMER.LIS 
+          -------------------------------------- 
+ 
+         Wenn  die  Hardware Ihres MCS-51-BASIC-Systems die EPROM-Programm-
+         ierung  unterstÅtzt  und  32  KByte an RAM zur VerfÅgung hat, dann
+         lassen  sich mit diesem Programm 8 Kbyte und 16 KByte gro·e EPROMs
+         programmieren.  Das  EPROM  sollte  nur  in die Programmierfassung 
+         eingesetzt oder entfernt werden, wenn der PWM-Ausgang des MCS-51-
+         BASIC-Systems  ertînt!  Die  zu  programmierenden Daten kînnen als
+         Intel-HEX-File   an  das  MCS-51-System  Åbertragen  werden,  dazu 
+         verwendet    man    am   besten   die   Terminal-MCS-51   Funktion 
+         "Datei senden"  (F10 - Menu,   4 - Datei senden).   Das   Programm 
+         reserviert den 16 KByte gro·en RAM-Bereich von 04000H - 07FFFH als 
+         Buffer  fÅr  die zu programmierenden Daten. öblicher Weise enthÑlt 
+         ein Intel-HEX-File auch die Adressen der  zu  speichernden  Daten, 
+         diese werden vom Programm umgerechnet, so da· immer in den Bereich 
+         04000H - 08000H  geladen  wird.  Wird  also  z.B.  ein  Assembler-
+         Programm mit mit dem Befehl  "ORG 2000H"  fÅr den Programmspeicher 
+         ab Adresse 02000H geschrieben, so  wird  das nach dem assemblieren 
+         vorhandene HEX-File ab Adresse 06000H ins RAM geladen. Wird danach 
+         ein 16 KByte gro·es EPROM mit diesen Daten gebrannt, so werden die 
+         Daten dann  in  den  EPROM-Bereich  (08000H - 0BFFFH)  ab  Adresse 
+         0A000H gebrannt.  Danach  mu·  dann  dieses  EPROM  ab der Adresse 
+         00000H vom MCS-51-System  angesprochen werden, so da· das Programm 
+         dann letztlich im Programmspeicher  ab  Adresse  02000H erscheint. 
+         Ebenso  werden  HEX-Files  fÅr  die  Bereiche 08000H - 0BFFFH oder 
+         0C000H - 0FFFFH immer in den RAM-Bereich  04000H - 07FFFH geladen. 
+         Das Programm "EPROMMER" beinhaltet auch ein einfaches Memory-Dump, 
+         so da· die oben beschriebenen ZusammenhÑnge im Speicher  ausgiebig 
+         erforscht werden kînnen.
+           

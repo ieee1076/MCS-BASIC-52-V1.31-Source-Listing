@@ -1,0 +1,79 @@
+10     PRINT CHR(12) :  REM Bildschirm loeschen
+20     PRINT "********************************************"
+30     PRINT "*                 ROMCOPY                  *"
+40     PRINT "*   Kopiert den MCS-51-BASIC-Interpreter   *"
+50     PRINT "* vom 8052AH-Prozessor in ein 8Kbyte EPROM *"
+60     PRINT "*          H.-J.Boehling 01.10.97          *"
+70     PRINT "********************************************"
+80     PRINT 
+90    MTOP=1FFFH :  REM RAM-Speicher ab 2000H sichern
+100    REM ===== Abfrage: EPROM eingesetzt ? ==========
+110    PRINT "Ist ein leeres 8Kbyte EPROM im Programmiersockel ? (J/N) :",
+120   K=GET :  IF K=0 THEN 120
+130    PRINT CHR(K)
+140    IF K>90 THEN K=K-32 :  REM Kleinbuchstaben nach Gross
+150    IF K=ASC(J) THEN 180
+160    PRINT "Erst einsetzen und dann Programm neu starten !"
+170    GOTO 760
+180    REM ===== Interpreter ins RAM kopieren =========
+190    PRINT "Ich kopiere den Interpreter ins RAM."
+200    FOR ADRESS=0000H TO 1FFFH
+210   XBY(ADRESS+2000H)=CBY(ADRESS)
+220    NEXT ADRESS
+230    REM ===== ROM mit RAM vergleichen ==============
+240    PRINT "Ich vergleiche ROM mit RAM."
+250    FOR ADRESS=0000H TO 1FFFH
+260    IF CBY(ADRESS)=XBY(ADRESS+2000H) THEN 290
+270    PRINT "Kopierfehler auf Adresse :", :  PH1. ADRESS+2000H
+280    GOTO 760
+290    NEXT ADRESS
+300    REM ===== EPROM brennen ========================
+310    PRINT 
+320    REM ----- Register laden -----------------------
+330    REM Quelle = 2000H bis 3FFFH (RAM-Kopie) nach 
+340    REM Ziel   = 8000H bis 9FFFH (EPROM)
+350    REM Laenge = 2000H Bytes (8 Kbytes)
+360   DBY(18H)=0FFH :  REM Ziel - 1 LSB
+370   DBY(1AH)=07FH :  REM Ziel - 1 HSB
+380   DBY(19H)=000H :  REM Quelle LSB
+390   DBY(1BH)=020H :  REM Quelle HSB
+400   DBY(1EH)=000H :  REM Laenge LSB
+410   DBY(1FH)=020H :  REM Laenge HSB
+420   DBY(26H)=DBY(26H).AND.0F7H :  REM Standartprogrammierung 50 MSec.
+430   IMPULS=65536-0.05*XTAL/12 :  REM Programmierimpulslaenge
+440   DBY(40H)=IMPULS/256 :  REM IMPULS LSB
+450   DBY(41H)=IMPULS.AND.0FFH :  REM IMPULS HSB
+460    REM ----- Abfrage: Brennen ? ------------------- 
+470    PRINT "Ich bin bereit zum brennen des EPROM."
+480    PRINT "Bitte Programmierspannung einschalten !"
+490    PRINT "Soll das EPROM gebrannt werden ? (J/N) :",
+500   K=GET :  IF K=0 THEN 500
+510    PRINT CHR(K)
+520    IF K>90 THEN K=K-32 :  REM Kleinbuchstaben nach Gross
+530    IF K=ASC(J) THEN 550
+540    GOTO 760
+550    PRINT "Ich brenne das EPROM !" :  PGM 
+560    REM ===== Fehlerueberpruefung ==================
+570    PRINT 
+580    REM ----- Fehlerregister abfragen --------------
+590    IF (DBY(30).OR.DBY(31))=0 THEN 630
+600   H=DBY(1AH) : L=DBY(18H) : HL=H*256+L
+610    PRINT "Falscher Wert auf EPROM-Adresse :", :  PH1. HL
+620    GOTO 760
+630    PRINT "Bei der Programmierung sind keine Fehler aufgetreten."
+640    REM ----- ROM mit EPROM vergleichen ------------
+650    PRINT "Ich vergleiche ROM mit EPROM."
+660    FOR ADRESS=0000H TO 1FFFH
+670    IF CBY(ADRESS)=XBY(ADRESS+8000H) THEN 700
+680    PRINT "Kopierfehler auf Adresse :", :  PH1. ADRESS+8000H
+690    GOTO 760
+700    NEXT ADRESS
+710    REM ----- Alles OK -----------------------------
+720    PRINT "Keine Fehler festgestellt."
+730    PRINT "MCS-51-BASIC-Kopie einwandfrei !"
+740    PRINT "Programmende."
+750    GOTO 780
+760    REM ===== Programm abbrechen ===================
+770    PRINT "Programm abgebrochen !"
+780    FOR I=1 TO 10 :  PWM 1761,1761,100 :  PWM 1398,1398,100 :  NEXT 
+790    END 

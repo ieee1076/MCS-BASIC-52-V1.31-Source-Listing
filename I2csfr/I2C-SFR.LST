@@ -1,0 +1,984 @@
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Cross Assembler   A S E M - 5 1   V 1.2
+       =====================================================
+
+
+
+	Source File:	I2C-SFR.A51
+	Object File:	I2C-SFR.HEX
+	List File:	I2C-SFR.LST
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:				;****************************************************************************
+    2:				;*                        BASIC-52 V1.31 enhancements                       *
+    3:				;*          The following code enhanced BASIC-52 with new commands          *
+    4:				;*               for I2C communicatin and read / write to SFR               *
+    5:				;*--------------------------------------------------------------------------*
+    6:				;* (C) H.-J. Boehling & D. Wulf 14.11.01                                    *
+    7:				;*     http://home.arcor.de/h.boehling                                      *
+    8:				;*     H-Boehling@gmx.de                                                    *
+    9:				;****************************************************************************
+   10:				;*
+   11:				;* Four new I2C communication commands as I2C-bus master.
+   12:				;*
+   13:				;* The syntax to use is:
+   14:				;*
+   15:				;*     I2CSTART           Sends a start condition to I2C bus.
+   16:				;*                        - Returns with busy, time out or status clear.
+   17:				;*     I2CSTOP            Sends a stop condition to I2C bus.
+   18:				;*                        - Returns with time out or status clear.
+   19:				;*     I2CPUT [byte]      Sends a byte to the I2C bus.
+   20:				;*                        - Returns with time out, no acknowledge or clear.
+   21:				;*     I2CGET [variable]  Reads a byte from I2C to a BASIC variable.
+   22:				;*                        - Set 18H (status) to 1 to send no acknowledge:
+   23:				;*                           DBY(18H) = 1 : I2CGET B : I2CSTOP : PRINT B
+   24:				;*                        - Returns with time out or status clear.
+   25:				;*
+   26:				;* Register 18H is the I2C communication status register; useage is:
+   27:				;*
+   28:				;*     STATUS=DBY(18H)
+   29:				;*      IF STATUS.AND.2=2 PRINT "Time out error!"
+   30:				;*      IF STATUS.AND.4=4 PRINT "Busy error!"
+   31:				;*      IF STATUS.AND.8=8 PRINT "No acknowlege error!"
+   32:				;*
+   33:				;*---------------------------------------------------------------------------
+   34:				;*
+   35:				;* Two new commands to read from or write to a special funkton register:
+   36:				;*
+   37:				;*     WRSFR ([address]) [byte]      Writes to a special funkton register.
+   38:				;*
+   39:				;*     RDSFR ([address]) [variable]  Reads from a special funkton register.
+   40:				;*
+   41:				;* [address] is the address of the SFR and had to be a value between
+   42:				;* 128 (080H) and 255 (0FFH).
+   43:				;*
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 2
+
+
+
+ Line  I  Addr  Code            Source
+
+   44:				;****************************************************************************
+   45:
+   46:				;----- Definitions ----------------------------------------------------------
+   47:
+   48:		B	 96	SDA		bit	P1.6                    ;I2C serial data line.
+   49:		B	 95	SCL		bit	P1.5                    ;I2C serial clock line.
+   50:
+   51:		N      0018	status		equ	018H			;Communication status.
+   52:
+   53:		N      000B	temp1		equ	11			;Temp. storage.
+   54:
+   55:		N	 2D	xbit		bit	45			;Command extension present.
+   56:
+   57:				; the following bits will be set in the status byte:
+   58:
+   59:		N      0002	tout		equ	00000010B		;I2C time out status.
+   60:		N      0004	busy		equ	00000100B		;I2C bus busy status.
+   61:		N      0008	nack		equ	00001000B		;Slave sends no acknowledge.
+   62:
+   63:				;----------------------------------------------------------------------------
+   64:				; The following code is necessary to notify the new statements to BASIC.
+   65:
+   66:		N      2002			org	2002H			;5Ah at 2002h tells BASIC-52
+   67:	  2002	5A				db	5AH			;to call 2048h (see below).
+   68:		N      2048			org	2048H			;Set bit 45 to tell BASIC-52
+   69:										;that custom commands or
+   70:	  2048	D2 2D				setb	xbit			;instructions have been
+   71:	  204A	22				ret				;added.
+   72:		N      2070			org	2070H			;Store starting address of
+   73:	  2070	90 24 00			mov	dptr,#vectortable	;vector table.
+   74:	  2073	22				ret
+   75:		N      2078			org	2078H			;Store starting address of
+   76:	  2078	90 24 0C			mov	dptr,#tokentable	;token table.
+   77:	  207B	22				ret
+   78:
+   79:				; The old code for BASIC-52 V1.3 overwrite 2090H, but this address had to be
+   80:				; used for a user reset routine! So the code now starts at here:
+   81:
+   82:				;===== Here starts the code for the new BASIC statements ====================
+   83:
+   84:		N      2400			org	2400h			;use any available address
+   85:
+   86:	  2400			vectortable:					;Vector table starts here.
+   87:										;Label to branch on:
+   88:	  2400	24 40				dw	i2cstart		;I2CSTART command
+   89:	  2402	24 56				dw	i2cstop			;I2CSTOP command
+   90:	  2404	24 62				dw	i2cput			;I2CPUT command
+   91:	  2406	24 92				dw	i2cget			;I2CGET command
+   92:	  2408	25 41				dw	wrsfr			;WRSFR command
+   93:	  240A	25 19				dw	rdsfr			;RDSFR command
+   94:
+   95:	  240C			tokentable:					;Token table starts here.
+   96:	  240C	10				db	10H			;1. user defined token for
+   97:	  240D	49 32 43 53	                db      'I2CSTART'              ;command name.
+	  2411	54 41 52 54
+   98:	  2415	00				db	0			;End of token indicator
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 3
+
+
+
+ Line  I  Addr  Code            Source
+
+   99:	  2416	11				db	11H			;2.
+  100:	  2417	49 32 43 53	                db      'I2CSTOP'
+	  241B	54 4F 50
+  101:	  241E	00				db	0
+  102:	  241F	12				db	12H			;3.
+  103:	  2420	49 32 43 50	                db      'I2CPUT'
+	  2424	55 54
+  104:	  2426	00				db	0
+  105:	  2427	13				db	13H			;4.
+  106:	  2428	49 32 43 47	                db      'I2CGET'
+	  242C	45 54
+  107:	  242E	00				db	0
+  108:	  242F	14		                db      14H                     ;5.
+  109:	  2430	57 52 53 46	                db      'WRSFR'
+	  2434	52
+  110:	  2435	00				db	0
+  111:	  2436	15		                db      15H                     ;6.
+  112:	  2437	52 44 53 46	                db      'RDSFR'
+	  243B	52
+  113:	  243C	00				db	0
+  114:
+  115:				;----- The following is necessary to get no problem with variable names -----
+  116:
+  117:	  243D	DF				db	0DFH			;Dummy token.
+  118:	  243E	7F				db	07FH			;Unused dummy char.
+  119:
+  120:				;----------------------------------------------------------------------------
+  121:
+  122:	  243F	FF				db	0FFH			;End of tokenlist indicator.
+  123:
+  124:				;----------------------------------------------------------------------------
+  125:
+  126:				;===== i2cstart - sends an I2C start condition to beginn communication ======
+  127:
+  128:	  2440	12 24 BA	i2cstart:	call	SCLhigh			;Set SCL to high.
+  129:	  2443	7F 04				mov	R7,#4			;Load time out counter.
+  130:	  2445	D2 96		setSDA:		setb	SDA			;Set SDA to high.
+  131:	  2447	20 96 06			jb	SDA,ishigh		;If not high bus is busy.
+  132:	  244A	DF F9				djnz	R7,setSDA		;If not try until R7 is zero.
+  133:	  244C	43 18 04			orl	status,#busy		;Set busy status.
+  134:	  244F	22				ret				;return to BASIC.
+  135:
+  136:	  2450	C2 96		ishigh:		clr	SDA			;Set start condition.
+  137:	  2452	53 18 00			anl     status,#0		;Clear I2C status.
+  138:	  2455	22		 		ret				;return to BASIC.
+  139:
+  140:				;===== i2cstop - sends an I2C stop condition to end communication ===========
+  141:
+  142:	  2456	53 18 00	i2cstop:	anl 	status,#0		;Clear I2C status.
+  143:	  2459	C2 96				clr	SDA			;Get SDA ready for stop.
+  144:	  245B	91 BA				acall 	SCLhigh			;Set clock for stop.
+  145:	  245D	91 B9		           	acall	delay			;Delay 4 machine cycles.
+  146:	  245F	D2 96				setb	SDA			;Set stop condition.
+  147:	  2461	22				ret				;Return to BASIC.
+  148:
+  149:				;===== i2cput - sends a byte from a BASIC value out to the I2C bus ==========
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 4
+
+
+
+ Line  I  Addr  Code            Source
+
+  150:
+  151:				;----- Get value and test for 8 bit only ------------------------------------
+  152:
+  153:	  2462	74 39		i2cput:		mov	A,#39H			;Put value to send on
+  154:	  2464	12 00 30			lcall	30H			;argument stack.
+  155:	  2467	74 01				mov	A,#1			;change value to 16 bit
+  156:	  2469	12 00 30			lcall	30H			;integer and write to R3:R1
+  157:	  246C	BB 00 58			cjne	R3,#0,i2cerror		;If R3 not zero	then
+  158:										;value bigger than 0FFH.
+  159:										;8 bit integer only error.
+  160:
+  161:				;----- Send byte to I2C bus -------------------------------------------------
+  162:
+  163:	  246F	E9				mov	A,R1			;Load byte to send.
+  164:	  2470	7E 08				mov	R6,#8			;Load bit counter
+  165:	  2472	C2 95		send:		clr	SCL			;Make clock low
+  166:	  2474	91 B9		           	acall	delay			;Delay 4 machine cycles.
+  167:	  2476	33				rlc	A			;Rotate data bit to C.
+  168:	  2477	92 96				mov	SDA,C			;Put data bit on pin.
+  169:	  2479	91 BA				acall	SCLhigh		        ;Send clock.
+  170:	  247B	91 B9		           	acall	delay			;Delay 4 machine cycles.
+  171:	  247D	DE F3				djnz	R6,send			;Repeat until all bits sent.
+  172:
+  173:				;----- Read acknowledge from slave ------------------------------------------
+  174:
+  175:	  247F	C2 95				clr	SCL			;Make clock low.
+  176:	  2481	91 B9		           	acall	delay			;Delay 4 machine cycles.
+  177:	  2483	D2 96				setb	SDA			;Release line for acknowledge.
+  178:	  2485	91 BA				acall	SCLhigh		        ;Send clock for acknowlege.
+  179:	  2487	91 B9			     	acall	delay			;Delay 4 machine cycles.
+  180:	  2489	30 96 03			jnb	SDA,ackok		;Check for valid acknowledge.
+  181:	  248C	43 18 08			orl	status,#nack		;Set no acknowledge status.
+  182:	  248F	C2 95		ackok:		clr	SCL			;Finish acknowledge bit.
+  183:	  2491	22				ret				;Return to BASIC.
+  184:
+  185:				;===== i2cget - Reads one byte from I2C bus to the argument stack ===========
+  186:
+  187:	  2492	7E 08		i2cget:		mov	R6,#8			;Load bit counter
+  188:	  2494	C2 95		read:		clr	SCL			;Make clock low.
+  189:	  2496	91 B9		              	acall	delay			;Delay 4 machine cycles.
+  190:	  2498	91 BA				acall	SCLhigh		        ;Send clock.
+  191:	  249A	91 B9			   	acall	delay			;Delay 4 machine cycles.
+  192:	  249C	A2 96				mov	C,SDA			;Get data bit from pin.
+  193:	  249E	33				rlc	A			;Rotate bit into result byte.
+  194:	  249F	DE F3				djnz	R6,read			;Repeat until all received.
+  195:
+  196:				;----- Put received byte on argument stack ----------------------------------
+  197:
+  198:	  24A1	F8				mov	R0,A			;Load R0 with reseived byte.
+  199:	  24A2	7A 00				mov	R2,#0			;Set high byte to zero.
+  200:	  24A4	74 9A				mov	A,#9AH			;Put byte on argument stack
+  201:	  24A6	12 00 30			lcall	30H			;with BASIC funktion.
+  202:
+  203:				;----- Send acknowledge to slave --------------------------------------------
+  204:
+  205:	  24A9	C2 95				clr	SCL			;Set clock low.
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 5
+
+
+
+ Line  I  Addr  Code            Source
+
+  206:	  24AB	91 B9		           	acall	delay			;Delay 4 machine cycles.
+  207:	  24AD	E5 18				mov	A,status		;Load acknowledge bit
+  208:	  24AF	13				rrc	A			;into C and
+  209:	  24B0	92 96				mov	SDA,C			;send acknowledge bit.
+  210:	  24B2	91 BA				acall	SCLhigh		        ;Send acknowledge clock.
+  211:
+  212:				;----- Set variable to received byte ----------------------------------------
+  213:
+  214:	  24B4	74 43				mov	A,#43H			;Set next variable to value
+  215:	  24B6	02 00 30			ljmp	30H			;on argument stack and
+  216:										;return to BASIC.
+  217:
+  218:				;----- delay - generates a delay of 4 machine cycles ------------------------
+  219:
+  220:	  24B9	22		delay:		ret				;4 cycles for CALL and RET.
+  221:
+  222:				;----- SCLhigh - sends SCL pin high and waits for any clock stretching ------
+  223:
+  224:	  24BA	7F 04		SCLhigh:	mov	R7,#4			;Load time out counter.
+  225:	  24BC	D2 95		setSCL:	   	setb	SCL			;Set SCL to high.
+  226:	  24BE	20 95 05		       	jb	SCL,quit		;If SCL actually high return.
+  227:	  24C1	DF F9				djnz	R7,setSCL		;If not try until R7 is zero.
+  228:	  24C3	43 18 02			orl	status,#tout		;Set status time out.
+  229:	  24C6	22		quit:		ret
+  230:
+  231:				;----- error - sends an error message to the terminal -----------------------
+  232:
+  233:	  24C7	74 07		i2cerror:	mov	A,#7			;Send CR/LF
+  234:	  24C9	12 00 30			lcall	30H
+  235:	  24CC	7B 24				mov	R3,#high i2cerrmsg	;Set string address.
+  236:	  24CE	79 DB				mov	R1,#low i2cerrmsg
+  237:	  24D0	D2 34		error:		setb	34H			;Read string from code memory.
+  238:	  24D2	74 06				mov	A,#6			;Send String to
+  239:	  24D4	12 00 30			lcall	30H			;terminal.
+  240:	  24D7	E4				clr	A
+  241:	  24D8	02 00 30			ljmp	30H			;Back to command mode.
+  242:
+  243:	  24DB	45 52 52 4F	i2cerrmsg:      db 'ERROR: BAD I2CPUT ARGUMENT'
+	  24DF	52 3A 20 42
+	  24E3	41 44 20 49
+	  24E7	32 43 50 55
+	  24EB	54 20 41 52
+	  24EF	47 55 4D 45
+	  24F3	4E 54
+  244:	  24F5	22				db	22H			;End of text.
+  245:
+  246:	  24F6	45 52 52 4F	sfrerrmsg:      db 'ERROR: BAD SFR ARGUMENT'
+	  24FA	52 3A 20 42
+	  24FE	41 44 20 53
+	  2502	46 52 20 41
+	  2506	52 47 55 4D
+	  250A	45 4E 54
+  247:	  250D	22				db	22H			;End of text.
+  248:
+  249:	  250E	74 07		sfrerror:	mov	A,#7			;Send CR/LF
+  250:	  2510	12 00 30			lcall	30H
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 6
+
+
+
+ Line  I  Addr  Code            Source
+
+  251:	  2513	7B 24				mov	R3,#high sfrerrmsg	;Set string address.
+  252:	  2515	79 F6				mov	R1,#low sfrerrmsg
+  253:	  2517	80 B7				sjmp	error
+  254:
+  255:				;===== rdsfr - read from special funtion register ==========================
+  256:
+  257:	  2519	74 39		rdsfr:		mov     A,#39H                  ;Put address from text to
+  258:	  251B	12 00 30			lcall	30H			;argument stack.
+  259:
+  260:	  251E	74 01				mov	A,#1			;change value to 16 bit
+  261:	  2520	12 00 30			lcall	30H			;integer and write to R3:R1
+  262:
+  263:	  2523	BB 00 E8			cjne	R3,#0,sfrerror		;If R3 not zero	then error.
+  264:	  2526	E9				mov	A,R1			;Address to Acc.
+  265:	  2527	30 E7 E4			jnb	Acc.7,sfrerror		;If address less then 80H!
+  266:	  252A	FC				mov	R4,A			;Address to R4.
+  267:
+  268:	  252B	75 82 88			mov	DPL,#low sfrgettab	;Set DPTR to jump
+  269:	  252E	75 83 25			mov	DPH,#high sfrgettab	;table.
+  270:	  2531	12 25 69			call	do_sfr			;Read SFR.
+  271:
+  272:	  2534	F8				mov	R0,A			;Load R0 with SFR byte.
+  273:	  2535	7A 00				mov	R2,#0			;Set high byte to zero.
+  274:	  2537	74 9A				mov	A,#9AH			;Put byte on argument stack
+  275:	  2539	12 00 30			lcall	30H
+  276:
+  277:				;----- Set variable to SFR byte ---------------------------------------------
+  278:
+  279:	  253C	74 43				mov	A,#43H			;Set next variable to value
+  280:	  253E	02 00 30			ljmp	30H			;on argument stack and
+  281:										;return to BASIC.
+  282:
+  283:				;===== wrsfr - write to special funtion register ============================
+  284:
+  285:	  2541	74 39		wrsfr:		mov     A,#39H                  ;Put address from text to
+  286:	  2543	12 00 30			lcall	30H			;argument stack.
+  287:
+  288:	  2546	74 01				mov	A,#1			;change value to 16 bit
+  289:	  2548	12 00 30			lcall	30H			;integer and write to R3:R1
+  290:	  254B	BB 00 C0			cjne	R3,#0,sfrerror		;If R3 not zero	then error
+  291:	  254E	E9				mov	A,R1			;or
+  292:	  254F	30 E7 BC			jnb	Acc.7,sfrerror		;if address less then 80H!
+  293:	  2552	89 0B				mov	temp1,R1		;Save address.
+  294:
+  295:	  2554	74 39				mov	A,#39H			;Put value to write on
+  296:	  2556	12 00 30			lcall	30H			;argument stack.
+  297:
+  298:	  2559	74 01				mov	A,#1			;change value to 16 bit
+  299:	  255B	12 00 30			lcall	30H			;integer and write to R3:R1
+  300:	  255E	BB 00 AD			cjne	R3,#0,sfrerror		;If R3 not zero	then
+  301:										;8 bit integer only error.
+  302:	  2561	75 82 86			mov	DPL,#low sfrputtab	;Set DPTR to jump
+  303:	  2564	75 83 25			mov	DPH,#high sfrputtab	;table.
+  304:	  2567	AC 0B				mov	R4,temp1		;Address to write to R4.
+  305:
+  306:				;----- do_sfr - read from or wright to SFR ----------------------------------
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 7
+
+
+
+ Line  I  Addr  Code            Source
+
+  307:
+  308:				;----- Calculate the jump ---------------------------------------------------
+  309:
+  310:	  2569	EC		do_sfr:		mov	A,R4			;Address to Acc
+  311:	  256A	24 80				add	A,#80H
+  312:	  256C	FC				mov	R4,A
+  313:	  256D	78 00				mov	R0,#0
+  314:	  256F	25 E0				add	A,ACC			;*2
+  315:	  2571	C8				xch	A,R0
+  316:	  2572	35 E0				addc	A,ACC			;carry
+  317:	  2574	C8				xch	A,R0
+  318:	  2575	25 E0				add	A,ACC			;*4
+  319:	  2577	C8				xch	A,R0
+  320:	  2578	35 E0				addc	A,ACC			;carry
+  321:	  257A	C8		                xch     A,R0
+  322:
+  323:				;----- Load DPTR with offset and jump ---------------------------------------
+  324:
+  325:	  257B	25 82		                add     A,DPL
+  326:	  257D	F5 82				mov	DPL,A
+  327:	  257F	E8				mov	A,R0
+  328:	  2580	35 83				addc	A,DPH
+  329:	  2582	F5 83				mov	DPH,A
+  330:	  2584	EC				mov	A,R4
+  331:	  2585	73				jmp	@A+DPTR			;Jump into table.
+  332:
+  333:				;----- The direct addressing table ------------------------------------------
+  334:
+  335:	  2586	89 80		sfrputtab:	mov	128,R1
+  336:	  2588	E5 80		sfrgettab:	mov	A,128
+  337:	  258A	22				ret
+  338:	  258B	89 81				mov	129,R1
+  339:	  258D	E5 81				mov	A,129
+  340:	  258F	22				ret
+  341:	  2590	89 82				mov	130,R1
+  342:	  2592	E5 82				mov	A,130
+  343:	  2594	22				ret
+  344:	  2595	89 83				mov	131,R1
+  345:	  2597	E5 83				mov	A,131
+  346:	  2599	22				ret
+  347:	  259A	89 84				mov	132,R1
+  348:	  259C	E5 84				mov	A,132
+  349:	  259E	22				ret
+  350:	  259F	89 85				mov	133,R1
+  351:	  25A1	E5 85				mov	A,133
+  352:	  25A3	22				ret
+  353:	  25A4	89 86				mov	134,R1
+  354:	  25A6	E5 86				mov	A,134
+  355:	  25A8	22				ret
+  356:	  25A9	89 87				mov	135,R1
+  357:	  25AB	E5 87				mov	A,135
+  358:	  25AD	22				ret
+  359:	  25AE	89 88				mov	136,R1
+  360:	  25B0	E5 88				mov	A,136
+  361:	  25B2	22				ret
+  362:	  25B3	89 89				mov	137,R1
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 8
+
+
+
+ Line  I  Addr  Code            Source
+
+  363:	  25B5	E5 89				mov	A,137
+  364:	  25B7	22				ret
+  365:	  25B8	89 8A				mov	138,R1
+  366:	  25BA	E5 8A				mov	A,138
+  367:	  25BC	22				ret
+  368:	  25BD	89 8B				mov	139,R1
+  369:	  25BF	E5 8B				mov	A,139
+  370:	  25C1	22				ret
+  371:	  25C2	89 8C				mov	140,R1
+  372:	  25C4	E5 8C				mov	A,140
+  373:	  25C6	22				ret
+  374:	  25C7	89 8D				mov	141,R1
+  375:	  25C9	E5 8D				mov	A,141
+  376:	  25CB	22				ret
+  377:	  25CC	89 8E				mov	142,R1
+  378:	  25CE	E5 8E				mov	A,142
+  379:	  25D0	22				ret
+  380:	  25D1	89 8F				mov	143,R1
+  381:	  25D3	E5 8F				mov	A,143
+  382:	  25D5	22				ret
+  383:	  25D6	89 90				mov	144,R1
+  384:	  25D8	E5 90				mov	A,144
+  385:	  25DA	22				ret
+  386:	  25DB	89 91				mov	145,R1
+  387:	  25DD	E5 91				mov	A,145
+  388:	  25DF	22				ret
+  389:	  25E0	89 92				mov	146,R1
+  390:	  25E2	E5 92				mov	A,146
+  391:	  25E4	22				ret
+  392:	  25E5	89 93				mov	147,R1
+  393:	  25E7	E5 93				mov	A,147
+  394:	  25E9	22				ret
+  395:	  25EA	89 94				mov	148,R1
+  396:	  25EC	E5 94				mov	A,148
+  397:	  25EE	22				ret
+  398:	  25EF	89 95				mov	149,R1
+  399:	  25F1	E5 95				mov	A,149
+  400:	  25F3	22				ret
+  401:	  25F4	89 96				mov	150,R1
+  402:	  25F6	E5 96				mov	A,150
+  403:	  25F8	22				ret
+  404:	  25F9	89 97				mov	151,R1
+  405:	  25FB	E5 97				mov	A,151
+  406:	  25FD	22				ret
+  407:	  25FE	89 98				mov	152,R1
+  408:	  2600	E5 98				mov	A,152
+  409:	  2602	22				ret
+  410:	  2603	89 99				mov	153,R1
+  411:	  2605	E5 99				mov	A,153
+  412:	  2607	22				ret
+  413:	  2608	89 9A				mov	154,R1
+  414:	  260A	E5 9A				mov	A,154
+  415:	  260C	22				ret
+  416:	  260D	89 9B				mov	155,R1
+  417:	  260F	E5 9B				mov	A,155
+  418:	  2611	22				ret
+
+ASEM-51 V1.2                                         Copyright (c) 1996 by W.W. Heinz                                         PAGE 9
+
+
+
+ Line  I  Addr  Code            Source
+
+  419:	  2612	89 9C				mov	156,R1
+  420:	  2614	E5 9C				mov	A,156
+  421:	  2616	22				ret
+  422:	  2617	89 9D				mov	157,R1
+  423:	  2619	E5 9D				mov	A,157
+  424:	  261B	22				ret
+  425:	  261C	89 9E				mov	158,R1
+  426:	  261E	E5 9E				mov	A,158
+  427:	  2620	22				ret
+  428:	  2621	89 9F				mov	159,R1
+  429:	  2623	E5 9F				mov	A,159
+  430:	  2625	22				ret
+  431:	  2626	89 A0				mov	160,R1
+  432:	  2628	E5 A0				mov	A,160
+  433:	  262A	22				ret
+  434:	  262B	89 A1				mov	161,R1
+  435:	  262D	E5 A1				mov	A,161
+  436:	  262F	22				ret
+  437:	  2630	89 A2				mov	162,R1
+  438:	  2632	E5 A2				mov	A,162
+  439:	  2634	22				ret
+  440:	  2635	89 A3				mov	163,R1
+  441:	  2637	E5 A3				mov	A,163
+  442:	  2639	22				ret
+  443:	  263A	89 A4				mov	164,R1
+  444:	  263C	E5 A4				mov	A,164
+  445:	  263E	22				ret
+  446:	  263F	89 A5				mov	165,R1
+  447:	  2641	E5 A5				mov	A,165
+  448:	  2643	22				ret
+  449:	  2644	89 A6				mov	166,R1
+  450:	  2646	E5 A6				mov	A,166
+  451:	  2648	22				ret
+  452:	  2649	89 A7				mov	167,R1
+  453:	  264B	E5 A7				mov	A,167
+  454:	  264D	22				ret
+  455:	  264E	89 A8				mov	168,R1
+  456:	  2650	E5 A8				mov	A,168
+  457:	  2652	22				ret
+  458:	  2653	89 A9				mov	169,R1
+  459:	  2655	E5 A9				mov	A,169
+  460:	  2657	22				ret
+  461:	  2658	89 AA				mov	170,R1
+  462:	  265A	E5 AA				mov	A,170
+  463:	  265C	22				ret
+  464:	  265D	89 AB				mov	171,R1
+  465:	  265F	E5 AB				mov	A,171
+  466:	  2661	22				ret
+  467:	  2662	89 AC				mov	172,R1
+  468:	  2664	E5 AC				mov	A,172
+  469:	  2666	22				ret
+  470:	  2667	89 AD				mov	173,R1
+  471:	  2669	E5 AD				mov	A,173
+  472:	  266B	22				ret
+  473:	  266C	89 AE				mov	174,R1
+  474:	  266E	E5 AE				mov	A,174
+
+ASEM-51 V1.2                                        Copyright (c) 1996 by W.W. Heinz                                         PAGE 10
+
+
+
+ Line  I  Addr  Code            Source
+
+  475:	  2670	22				ret
+  476:	  2671	89 AF				mov	175,R1
+  477:	  2673	E5 AF				mov	A,175
+  478:	  2675	22				ret
+  479:	  2676	89 B0				mov	176,R1
+  480:	  2678	E5 B0				mov	A,176
+  481:	  267A	22				ret
+  482:	  267B	89 B1				mov	177,R1
+  483:	  267D	E5 B1				mov	A,177
+  484:	  267F	22				ret
+  485:	  2680	89 B2				mov	178,R1
+  486:	  2682	E5 B2				mov	A,178
+  487:	  2684	22				ret
+  488:	  2685	89 B3				mov	179,R1
+  489:	  2687	E5 B3				mov	A,179
+  490:	  2689	22				ret
+  491:	  268A	89 B4				mov	180,R1
+  492:	  268C	E5 B4				mov	A,180
+  493:	  268E	22				ret
+  494:	  268F	89 B5				mov	181,R1
+  495:	  2691	E5 B5				mov	A,181
+  496:	  2693	22				ret
+  497:	  2694	89 B6				mov	182,R1
+  498:	  2696	E5 B6				mov	A,182
+  499:	  2698	22				ret
+  500:	  2699	89 B7				mov	183,R1
+  501:	  269B	E5 B7				mov	A,183
+  502:	  269D	22				ret
+  503:	  269E	89 B8				mov	184,R1
+  504:	  26A0	E5 B8				mov	A,184
+  505:	  26A2	22				ret
+  506:	  26A3	89 B9				mov	185,R1
+  507:	  26A5	E5 B9				mov	A,185
+  508:	  26A7	22				ret
+  509:	  26A8	89 BA				mov	186,R1
+  510:	  26AA	E5 BA				mov	A,186
+  511:	  26AC	22				ret
+  512:	  26AD	89 BB				mov	187,R1
+  513:	  26AF	E5 BB				mov	A,187
+  514:	  26B1	22				ret
+  515:	  26B2	89 BC				mov	188,R1
+  516:	  26B4	E5 BC				mov	A,188
+  517:	  26B6	22				ret
+  518:	  26B7	89 BD				mov	189,R1
+  519:	  26B9	E5 BD				mov	A,189
+  520:	  26BB	22				ret
+  521:	  26BC	89 BE				mov	190,R1
+  522:	  26BE	E5 BE				mov	A,190
+  523:	  26C0	22				ret
+  524:	  26C1	89 BF				mov	191,R1
+  525:	  26C3	E5 BF				mov	A,191
+  526:	  26C5	22				ret
+  527:	  26C6	89 C0				mov	192,R1
+  528:	  26C8	E5 C0				mov	A,192
+  529:	  26CA	22				ret
+  530:	  26CB	89 C1				mov	193,R1
+
+ASEM-51 V1.2                                        Copyright (c) 1996 by W.W. Heinz                                         PAGE 11
+
+
+
+ Line  I  Addr  Code            Source
+
+  531:	  26CD	E5 C1				mov	A,193
+  532:	  26CF	22				ret
+  533:	  26D0	89 C2				mov	194,R1
+  534:	  26D2	E5 C2				mov	A,194
+  535:	  26D4	22				ret
+  536:	  26D5	89 C3				mov	195,R1
+  537:	  26D7	E5 C3				mov	A,195
+  538:	  26D9	22				ret
+  539:	  26DA	89 C4				mov	196,R1
+  540:	  26DC	E5 C4				mov	A,196
+  541:	  26DE	22				ret
+  542:	  26DF	89 C5				mov	197,R1
+  543:	  26E1	E5 C5				mov	A,197
+  544:	  26E3	22				ret
+  545:	  26E4	89 C6				mov	198,R1
+  546:	  26E6	E5 C6				mov	A,198
+  547:	  26E8	22				ret
+  548:	  26E9	89 C7				mov	199,R1
+  549:	  26EB	E5 C7				mov	A,199
+  550:	  26ED	22				ret
+  551:	  26EE	89 C8				mov	200,R1
+  552:	  26F0	E5 C8				mov	A,200
+  553:	  26F2	22				ret
+  554:	  26F3	89 C9				mov	201,R1
+  555:	  26F5	E5 C9				mov	A,201
+  556:	  26F7	22				ret
+  557:	  26F8	89 CA				mov	202,R1
+  558:	  26FA	E5 CA				mov	A,202
+  559:	  26FC	22				ret
+  560:	  26FD	89 CB				mov	203,R1
+  561:	  26FF	E5 CB				mov	A,203
+  562:	  2701	22				ret
+  563:	  2702	89 CC				mov	204,R1
+  564:	  2704	E5 CC				mov	A,204
+  565:	  2706	22				ret
+  566:	  2707	89 CD				mov	205,R1
+  567:	  2709	E5 CD				mov	A,205
+  568:	  270B	22				ret
+  569:	  270C	89 CE				mov	206,R1
+  570:	  270E	E5 CE				mov	A,206
+  571:	  2710	22				ret
+  572:	  2711	89 CF				mov	207,R1
+  573:	  2713	E5 CF				mov	A,207
+  574:	  2715	22				ret
+  575:	  2716	89 D0				mov	208,R1
+  576:	  2718	E5 D0				mov	A,208
+  577:	  271A	22				ret
+  578:	  271B	89 D1				mov	209,R1
+  579:	  271D	E5 D1				mov	A,209
+  580:	  271F	22				ret
+  581:	  2720	89 D2				mov	210,R1
+  582:	  2722	E5 D2				mov	A,210
+  583:	  2724	22				ret
+  584:	  2725	89 D3				mov	211,R1
+  585:	  2727	E5 D3				mov	A,211
+  586:	  2729	22				ret
+
+ASEM-51 V1.2                                        Copyright (c) 1996 by W.W. Heinz                                         PAGE 12
+
+
+
+ Line  I  Addr  Code            Source
+
+  587:	  272A	89 D4				mov	212,R1
+  588:	  272C	E5 D4				mov	A,212
+  589:	  272E	22				ret
+  590:	  272F	89 D5				mov	213,R1
+  591:	  2731	E5 D5				mov	A,213
+  592:	  2733	22				ret
+  593:	  2734	89 D6				mov	214,R1
+  594:	  2736	E5 D6				mov	A,214
+  595:	  2738	22				ret
+  596:	  2739	89 D7				mov	215,R1
+  597:	  273B	E5 D7				mov	A,215
+  598:	  273D	22				ret
+  599:	  273E	89 D8				mov	216,R1
+  600:	  2740	E5 D8				mov	A,216
+  601:	  2742	22				ret
+  602:	  2743	89 D9				mov	217,R1
+  603:	  2745	E5 D9				mov	A,217
+  604:	  2747	22				ret
+  605:	  2748	89 DA				mov	218,R1
+  606:	  274A	E5 DA				mov	A,218
+  607:	  274C	22				ret
+  608:	  274D	89 DB				mov	219,R1
+  609:	  274F	E5 DB				mov	A,219
+  610:	  2751	22				ret
+  611:	  2752	89 DC				mov	220,R1
+  612:	  2754	E5 DC				mov	A,220
+  613:	  2756	22				ret
+  614:	  2757	89 DD				mov	221,R1
+  615:	  2759	E5 DD				mov	A,221
+  616:	  275B	22				ret
+  617:	  275C	89 DE				mov	222,R1
+  618:	  275E	E5 DE				mov	A,222
+  619:	  2760	22				ret
+  620:	  2761	89 DF				mov	223,R1
+  621:	  2763	E5 DF				mov	A,223
+  622:	  2765	22				ret
+  623:	  2766	89 E0				mov	224,R1
+  624:	  2768	E5 E0				mov	A,224
+  625:	  276A	22				ret
+  626:	  276B	89 E1				mov	225,R1
+  627:	  276D	E5 E1				mov	A,225
+  628:	  276F	22				ret
+  629:	  2770	89 E2				mov	226,R1
+  630:	  2772	E5 E2				mov	A,226
+  631:	  2774	22				ret
+  632:	  2775	89 E3				mov	227,R1
+  633:	  2777	E5 E3				mov	A,227
+  634:	  2779	22				ret
+  635:	  277A	89 E4				mov	228,R1
+  636:	  277C	E5 E4				mov	A,228
+  637:	  277E	22				ret
+  638:	  277F	89 E5				mov	229,R1
+  639:	  2781	E5 E5				mov	A,229
+  640:	  2783	22				ret
+  641:	  2784	89 E6				mov	230,R1
+  642:	  2786	E5 E6				mov	A,230
+
+ASEM-51 V1.2                                        Copyright (c) 1996 by W.W. Heinz                                         PAGE 13
+
+
+
+ Line  I  Addr  Code            Source
+
+  643:	  2788	22				ret
+  644:	  2789	89 E7				mov	231,R1
+  645:	  278B	E5 E7				mov	A,231
+  646:	  278D	22				ret
+  647:	  278E	89 E8				mov	232,R1
+  648:	  2790	E5 E8				mov	A,232
+  649:	  2792	22				ret
+  650:	  2793	89 E9				mov	233,R1
+  651:	  2795	E5 E9				mov	A,233
+  652:	  2797	22				ret
+  653:	  2798	89 EA				mov	234,R1
+  654:	  279A	E5 EA				mov	A,234
+  655:	  279C	22				ret
+  656:	  279D	89 EB				mov	235,R1
+  657:	  279F	E5 EB				mov	A,235
+  658:	  27A1	22				ret
+  659:	  27A2	89 EC				mov	236,R1
+  660:	  27A4	E5 EC				mov	A,236
+  661:	  27A6	22				ret
+  662:	  27A7	89 ED				mov	237,R1
+  663:	  27A9	E5 ED				mov	A,237
+  664:	  27AB	22				ret
+  665:	  27AC	89 EE				mov	238,R1
+  666:	  27AE	E5 EE				mov	A,238
+  667:	  27B0	22				ret
+  668:	  27B1	89 EF				mov	239,R1
+  669:	  27B3	E5 EF				mov	A,239
+  670:	  27B5	22				ret
+  671:	  27B6	89 F0				mov	240,R1
+  672:	  27B8	E5 F0				mov	A,240
+  673:	  27BA	22				ret
+  674:	  27BB	89 F1				mov	241,R1
+  675:	  27BD	E5 F1				mov	A,241
+  676:	  27BF	22				ret
+  677:	  27C0	89 F2				mov	242,R1
+  678:	  27C2	E5 F2				mov	A,242
+  679:	  27C4	22				ret
+  680:	  27C5	89 F3				mov	243,R1
+  681:	  27C7	E5 F3				mov	A,243
+  682:	  27C9	22				ret
+  683:	  27CA	89 F4				mov	244,R1
+  684:	  27CC	E5 F4				mov	A,244
+  685:	  27CE	22				ret
+  686:	  27CF	89 F5				mov	245,R1
+  687:	  27D1	E5 F5				mov	A,245
+  688:	  27D3	22				ret
+  689:	  27D4	89 F6				mov	246,R1
+  690:	  27D6	E5 F6				mov	A,246
+  691:	  27D8	22				ret
+  692:	  27D9	89 F7				mov	247,R1
+  693:	  27DB	E5 F7				mov	A,247
+  694:	  27DD	22				ret
+  695:	  27DE	89 F8				mov	248,R1
+  696:	  27E0	E5 F8				mov	A,248
+  697:	  27E2	22				ret
+  698:	  27E3	89 F9				mov	249,R1
+
+ASEM-51 V1.2                                        Copyright (c) 1996 by W.W. Heinz                                         PAGE 14
+
+
+
+ Line  I  Addr  Code            Source
+
+  699:	  27E5	E5 F9				mov	A,249
+  700:	  27E7	22				ret
+  701:	  27E8	89 FA				mov	250,R1
+  702:	  27EA	E5 FA				mov	A,250
+  703:	  27EC	22				ret
+  704:	  27ED	89 FB				mov	251,R1
+  705:	  27EF	E5 FB				mov	A,251
+  706:	  27F1	22				ret
+  707:	  27F2	89 FC				mov	252,R1
+  708:	  27F4	E5 FC				mov	A,252
+  709:	  27F6	22				ret
+  710:	  27F7	89 FD				mov	253,R1
+  711:	  27F9	E5 FD				mov	A,253
+  712:	  27FB	22				ret
+  713:	  27FC	89 FE				mov	254,R1
+  714:	  27FE	E5 FE				mov	A,254
+  715:	  2800	22				ret
+  716:	  2801	89 FF				mov	255,R1
+  717:	  2803	E5 FF				mov	A,255
+  718:	  2805	22				ret
+  719:
+  720:				;----------------------------------------------------------------------------
+  721:
+  722:						end
+  723:
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.2                                        Copyright (c) 1996 by W.W. Heinz                                         PAGE 15
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+AC				  BIT	      D6
+ACC				  DATA	      E0
+ACKOK				  CODE	    248F	 182
+B				  DATA	      F0
+BUSY				  NUMBER    0004	  60
+CY				  BIT	      D7
+DELAY				  CODE	    24B9	 220
+DO_SFR				  CODE	    2569	 310
+DPH				  DATA	      83
+DPL				  DATA	      82
+EA				  BIT	      AF
+ERROR				  CODE	    24D0	 237
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+I2CERRMSG			  CODE	    24DB	 243
+I2CERROR			  CODE	    24C7	 233
+I2CGET				  CODE	    2492	 187
+I2CPUT				  CODE	    2462	 153
+I2CSTART			  CODE	    2440	 128
+I2CSTOP				  CODE	    2456	 142
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+ISHIGH				  CODE	    2450	 136
+IT0				  BIT	      88
+IT1				  BIT	      8A
+NACK				  NUMBER    0008	  61
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+QUIT				  CODE	    24C6	 229
+
+ASEM-51 V1.2                                        Copyright (c) 1996 by W.W. Heinz                                         PAGE 16
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+RB8				  BIT	      9A
+RD				  BIT	      B7
+RDSFR				  CODE	    2519	 257
+READ				  CODE	    2494	 188
+REN				  BIT	      9C
+RESET				  CODE	    0000
+RI				  BIT	      98
+RS0				  BIT	      D3
+RS1				  BIT	      D4
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCL				  BIT	      95	  49
+SCLHIGH				  CODE	    24BA	 224
+SCON				  DATA	      98
+SDA				  BIT	      96	  48
+SEND				  CODE	    2472	 165
+SETSCL				  CODE	    24BC	 225
+SETSDA				  CODE	    2445	 130
+SFRERRMSG			  CODE	    24F6	 246
+SFRERROR			  CODE	    250E	 249
+SFRGETTAB			  CODE	    2588	 336
+SFRPUTTAB			  CODE	    2586	 335
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+STATUS				  NUMBER    0018	  51
+T0				  BIT	      B4
+T1				  BIT	      B5
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TEMP1				  NUMBER    000B	  53
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TOKENTABLE			  CODE	    240C	  95
+TOUT				  NUMBER    0002	  59
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TXD				  BIT	      B1
+VECTORTABLE			  CODE	    2400	  86
+WR				  BIT	      B6
+WRSFR				  CODE	    2541	 285
+XBIT				  BIT	      2D	  55

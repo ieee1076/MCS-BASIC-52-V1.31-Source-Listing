@@ -1,0 +1,58 @@
+
+
+                       Terminal-MCS-51 Vollwersion-V03.00
+                       ----------------------------------
+
+                (C) Copyright 1997/98/99/00 Hans-JÅrgen Bîhling 
+                                           Rankestr. 8a
+                                           D-40474 DÅsseldorf
+                    e-mail:                H-Boehling@gmx.de
+                    homepage:              http://home.nexgo.de/H.Boehling
+
+          Lizenzhinweise
+          --------------  
+
+         Dieses  Programm  ist  keine Shareware!  Das  hei·t, es darf nicht
+         weitergegeben werden. Die Verbreitung auf Disketten,  CDROM,  oder
+         sonstigen Medien ist nur fÅr die Shareware-Version gestattet!
+         
+         Diese  Vollversion  darf  nur  von einem Anwender  uneingeschrÑnkt 
+         benutzt  werden. Das hei·t: Nur ein Anwender hat das alleinige und 
+         private Nutzungsrecht!
+
+         ACHTUNG:  Der  Autor gewÑhrt keinerlei Garantie fÅr Fehlerfreiheit
+         des  Programms.  Im  Falle von Datenverlust oder BeschÑdigung wird
+         keinerlei  Verantwortung  vom Autor Åbernommen. Die Nutzung dieses
+         Programms geschieht  auf  eigene  Gefahr!  Au·erdem ist allein der
+         Anwender   fÅr   die  RechtmÑ·igkeit  der  durch  seine  Benutzung
+         verursachten  Datenduplikation,  -manipulation,  -vernichtung  und
+         Sonstiges verantwortlich.
+
+         Dieses Programm wurde nach bestem Wissen und Gewissen programmiert
+         und  vielfach getestet. Trotzdem lassen sich Programmierfehler nie
+         ganz  ausschlie·en.  FÅr  Hinweise auf Fehler bin ich deshalb sehr
+         dankbar.
+
+         Das Originalarchiv besteht aus folgenden Dateien:
+
+
+         FILE_ID .DIZ  - Kurzbeschreibung von Terminal-MCS-51
+         LIZENZ  .TXT  - Shareware Lizenzbedingungen 
+         REGISTER.TXT  - Formular Registrierantrag
+         TERM-51D.TXT  - Dokumentation zu Terminal-MCS-51 deutsch
+         TERM-51E.TXT  - Dokumentation zu Terminal-MCS-51 englisch
+         TERM-51D.EXE  - Terminal-MCS-51 deutsche Version
+         TERM-51E.EXE  - Terminal-MCS-51 englische Version
+         TERM-51D.INI  - Terminal-MCS-51 Initialisierungsdatei deutsch 
+         TERM-51E.INI  - Terminal-MCS-51 Initialisierungsdatei englisch
+         EDIT    .BAT  - Batch-Datei fÅr den Editoraufruf 
+         EPROMMER.LIS  - MCS-51-BASIC-Programm EPROM-Brenner
+         EPROMMER.TXT  - Beschreibung zu EPROMMER.LIS
+         ROMCOPY .LIS  - MCS-51-BASIC-Programm MCS-51-Interpreter kopieren
+         ROMCOPY .TXT  - Beschreibung zu ROMCOPY.LIS
+         RENUTEST.LIS  - MCS-51-BASIC-Programm zum Test der RENUM-Funktion  
+
+
+         Weiteres  entnehmen Sie bitte der Dokumentation zu Terminal-MCS-51
+         (TERM-51D.TXT).
+

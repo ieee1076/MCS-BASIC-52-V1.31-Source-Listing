@@ -1,0 +1,14 @@
+          Das MSC-51-BASIC-Programm ROMCOPY.LIS
+          -------------------------------------
+
+         Wenn  die  Hardware  Ihres MCS-51-BASIC-System die EPROM-Programm-
+         ierung  zul„át,  dann  kann man mit diesem Programm den ROM-Inhalt
+         des  8052AH-BASIC-Prozessors  in  ein 8 Kbyte groáes EPROM vom Typ
+         2764  kopieren. Dieses EPROM kann dann in Zusammenarbeit mit einem
+         80C32  Prozessor  den 8052-AH ersetzen. Dabei macht man sich nicht
+         strafbar,  denn  die  Fa.  INTEL  hat  diesen von ihr entwickelten
+         BASIC-Interpreter  als  Freeware  freigegeben!  Sogar das dokumen-
+         tierte  Sourcelisting  kann  aus  dem Internet gezogen werden. Das
+         leere  EPROM  muá  vor dem Programmstart in die Programmierfassung
+         eingesetzt werden!
+

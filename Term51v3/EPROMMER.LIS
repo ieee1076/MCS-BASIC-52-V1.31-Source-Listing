@@ -1,0 +1,273 @@
+10     REM ********************************************
+20     REM *        (E)EPROM-Programmer V02.00        *
+30     REM *  Fuer MCS-51-BASIC-Systeme mit 32KB RAM  *
+40     REM * und Hardware zur (E)EPROM-Programmierung *
+50     REM *       (C) H.-J. Boehling 13.02.00        *
+60     REM *     http://home.nexgo.de/H.Boehling      *
+70     REM *                                          *
+80     REM ********************************************
+90     REM
+100   MTOP=3FFFH :  STRING 82,80 :  REM RAM-Speicher ab 4000H sichern
+110   T=1 :  GOTO 440 :  REM Type 8 Kbyte setzen
+120    REM ****** Hauptmenue **************************
+130    GOSUB 1500
+140    PRINT "*** Hauptmenue **************************"
+150    PRINT 
+160    PRINT " -1- (E)EPROM Speichergroesse einstellen"
+170    PRINT " -2- (E)EPROM Leertest"
+180    PRINT " -3- (E)EPROM ins RAM kopieren"
+190    PRINT " -4- (E)EPROM mit RAM vergleichen"
+200    PRINT " -5- RAM ins (E)EPROM kopieren"
+210    PRINT " -6- RAM mit 0FFH fuellen"
+220    PRINT " -7- Intel HEX-File ins RAM senden"
+230    PRINT " -8- Speicher betrachten"
+240    PRINT " -9- Programm beenden"
+250    PRINT 
+260    INPUT "Ihre Wahl :",W
+270    IF W=1 THEN 380
+280    IF W=2 THEN 470
+290    IF W=3 THEN 590
+300    IF W=4 THEN 700
+310    IF W=5 THEN 880
+320    IF W=6 THEN 1630
+330    IF W=7 THEN 1790
+340    IF W=8 THEN 2220
+350    IF W=9 THEN 2700
+360    GOTO 130
+370    REM ====== Speichergroesse abfragen ============
+380    GOSUB 1500
+390    PRINT "*** Speichergroesse einstellen **********" :  PRINT 
+400    PRINT " -1- 8  KByte (2764, 2864)"
+410    PRINT " -2- 16 KByte (27128)" :  PRINT 
+420    INPUT "Ihre Wahl :",T :  IF T>2 THEN T=1 :  GOTO 380
+430    REM ------ Adressen berechnen ------------------
+440   S=4000H : E=3FFFH+2000H*T : P=8000H
+450    GOTO 130
+460    REM ====== EPROM Leertest ======================
+470    GOSUB 560 :  GOSUB 1380 :  GOSUB 560
+480    PRINT "Ich pruefe ob das (E)EPROM leer ist, bitte etwas Geduld !"
+490   CK=0 :  REM Fehler Merker ruecksetzen
+500    FOR ADDR=S+S TO E+S
+510    IF XBY(ADDR)<>0FFH THEN CK=ADDR : ADDR=E+S
+520    NEXT ADDR
+530    IF CK=0 THEN  PRINT "Das (E)EPROM ist leer !" :  GOTO 1550
+540    PH0. "Das (E)EPROM ist auf Adresse",CK," nicht leer !"
+550    GOTO 1550
+560    GOSUB 1500
+570    PRINT "*** (E)EPROM-Leertest *******************" :  PRINT 
+580    RETURN 
+590    REM ====== EPROM einlesen ======================
+600    GOSUB 670 :  GOSUB 1380 :  GOSUB 670
+610    PRINT "Ich lese das (E)EPROM, bitte etwas Geduld !"
+620    FOR ADDR=S TO E
+630   XBY(ADDR)=XBY(ADDR+S)
+640    NEXT ADDR
+650    PRINT "Ich habe das (E)EPROM ins RAM kopiert !"
+660    GOTO 1550
+670    GOSUB 1500
+680    PRINT "*** (E)EPROM ins RAM kopieren ***********" :  PRINT 
+690    RETURN 
+700    REM ====== EPROM vergleichen ===================
+710    GOSUB 850 :  GOSUB 1380 :  GOSUB 850
+720    PRINT "Ich vergleiche (E)EPROM mit RAM, bitte etwas Geduld !"
+730   CK=0 :  REM Fehler Merker ruecksetzen
+740    FOR ADDR=S TO E
+750    IF XBY(ADDR+S)<>XBY(ADDR) THEN CK=1
+760    IF CK=1 THEN  PH0. "Der Wert    ",XBY(ADDR),
+770    IF CK=1 THEN  PH1. " auf Adr. ",ADDR
+780    IF CK=1 THEN  PH0. "Im (E)EPROM ",XBY(ADDR+S),
+790    IF CK=1 THEN  PH1. " auf Adr. ",ADDR+S
+800    IF CK=1 THEN ADDR=E
+810    NEXT ADDR
+820    IF CK=0 THEN  PRINT "(E)EPROM und RAM sind gleich !" :  GOTO 1550
+830    PRINT  :  PRINT "(E)EPROM und RAM sind nicht gleich !"
+840    GOTO 1550
+850    GOSUB 1500
+860    PRINT "*** (E)EPROM mit RAM vergleichen ********" :  PRINT 
+870    RETURN 
+880    REM ====== EPROM programmieren =================
+890    GOSUB 1300
+900    PRINT "Programmierimpulslaenge ?" :  PRINT 
+910    PRINT " -1- INTELigent"
+920    PRINT " -2- EEPROM (10 MSek.)"
+930    PRINT " -3- Normal (50 MSek.)" :  PRINT 
+940   K=GET :  IF K>0 THEN 940
+950    PRINT "Ihre Wahl :",
+960   K=GET :  IF K=0 THEN 960
+970    IF K>90 THEN K=K-32
+980    IF K=ASC(1) THEN Z=0.001 : DBY(26H)=DBY(26H).OR.8 :  GOTO 1030
+990    IF K=ASC(2) THEN Z=0.01 : DBY(26H)=DBY(26H).AND.0F7H :  GOTO 1030
+1000   IF K=ASC(3) THEN Z=0.05 : DBY(26H)=DBY(26H).AND.0F7H :  GOTO 1030
+1010   IF K=27 THEN 130
+1020   GOTO 880
+1030   PUSH (65535-(Z*XTAL/12)) :  GOSUB 1340
+1040   POP B : DBY(40H)=B :  POP B : DBY(41H)=B
+1050   REM PH0.(DBY(40H)),(DBY(41H)): INPUT IN
+1060   REM ------ Register laden ----------------------
+1070   PUSH (E-S+1) :  GOSUB 1340 :  REM  Anzahl der Bytes 
+1080   POP B : DBY(1FH)=B :  POP B : DBY(1EH)=B
+1090   REM PRINT "L:", : PH0. DBY(1FH),DBY(1EH)
+1100   PUSH (P-1) :  GOSUB 1340 :  REM EPROM Adresse 
+1110   POP B : DBY(1AH)=B :  POP B : DBY(18H)=B
+1120   REM PRINT "E:", : PH0. DBY(1AH),DBY(18H)
+1130   PUSH S :  GOSUB 1340 :  REM RAM Adresse 
+1140   POP B : DBY(1BH)=B :  POP B : DBY(19H)=B
+1150   REM PRINT "R:", : PH0. DBY(1BH),DBY(19H) : INPUT IN
+1160   REM ------ Programmieren -----------------------
+1170   GOSUB 1300 :  GOSUB 1380
+1180   PRINT "Ich programmiere das (E)EPROM." :  PGM 
+1190   REM ------ Fehler aufgetreten ? ----------------
+1200   GOSUB 1300
+1210   IF (DBY(30).OR.DBY(31))=0 THEN 1270
+1220   PRINT "Fehler aufgetreten!"
+1230  B=DBY(19H)+256*DBY(1BH) : C=DBY(18H)+256*DBY(1AH)+1
+1240   PH0. "Der Wert    ",XBY(B), :  PH1. " auf Adr. ",B
+1250   PH0. "Im (E)EPROM ",XBY(C), :  PH1. " auf Adr. ",C
+1260   GOTO 1550
+1270   REM ------ Alles OK ----------------------------
+1280   PRINT "Bei der Programmierung sind keine Fehler aufgetreten !"
+1290   GOTO 1550
+1300   GOSUB 1500
+1310   PRINT "*** RAM ins (E)EPROM kopieren ***********" :  PRINT 
+1320   RETURN 
+1330   REM ------ 16-Bit Wert aufteilen ---------------
+1340   POP B
+1350   PUSH (B.AND.0FFH) :  REM LSB von B
+1360   PUSH (INT(B/256)) :  REM HSB von B
+1370   RETURN 
+1380   REM ------ EPROM einsetzen ---------------------
+1390   PRINT "Bitte das (E)EPROM in die Fassung einsetzen !"
+1400   PWM 2095,2095,3000
+1410  K=GET :  IF K>0 GOTO 1410
+1420   PRINT "(E)EPROM eingesetzt ? (J/N) oder (Esc) fuer Ende :",
+1430  K=GET :  IF K=0 GOTO 1430
+1440   IF K>90 THEN K=K-32
+1450   PRINT CHR(K)
+1460   IF K=ASC(J) THEN 1490
+1470   IF K=27 THEN 130 :  REM Escape 
+1480   GOTO 1400
+1490   RETURN 
+1500   REM ------ Ueberschrift ------------------------
+1510   PRINT CHR(12), :  PRINT  :  REM Bildschirm loeschen
+1520   PRINT "*** (E)EPROM-Programmer *****************    ",
+1530   PRINT "Speichergroesse:",T*8,"Kbyte  "
+1540   RETURN 
+1550   REM ------ Ereignis aufgetreten ----------------
+1555  K=GET :  IF K>0 THEN 1555
+1560   FOR I=1 TO 40 :  PWM 1761,1761,100 :  PWM 1398,1398,100
+1565  K=GET :  IF K>0 THEN I=40
+1568   NEXT I
+1570   GOSUB 1590 :  GOTO 130
+1580   REM ------ Taste abwarten ----------------------
+1590  K=GET :  IF K>0 THEN 1590
+1600   PRINT " Weiter? ",
+1610  K=GET :  IF K=0 THEN 1610
+1620   RETURN 
+1630   REM ====== RAM mit 0FFH fuellen ================
+1640   GOSUB 1500
+1650   PRINT "*** RAM mit 0FFH fuellen ****************" :  PRINT 
+1660  K=GET :  IF K>0 GOTO 1660
+1670   PRINT "RAM mit 0FFH ueberschreiben ? (J/N) :",
+1680  K=GET :  IF K=0 GOTO 1680
+1690   IF K>90 THEN K=K-32
+1700   PRINT CHR(K)
+1710   IF K=ASC(N).OR.K=27 THEN 130
+1720   PRINT "Ich fuelle das RAM mit 0FFH, bitte etwas Geduld !"
+1730   FOR ADDR = S TO E
+1740  XBY(ADDR) = 0FFH
+1750   NEXT ADDR
+1760   PRINT "Ich habe das RAM ueberschrieben !"
+1770   GOTO 1550
+1780   REM ====== HEX-File empfangen ==================
+1790   GOSUB 1500
+1800   PRINT "*** Intel HEX-File empfangen ************" :  PRINT 
+1810   INPUT "Bitte HEX-File senden! >",$(0)
+1820   IF ASC($(0),1)<>13 THEN 1810 :  REM Auf Return (Start) warten 
+1830   PRINT "Empfange File !"
+1840  ADDR=0 : L=L+1 :  INPUT ">",$(0)
+1850   REM ------ Erstes Zeichen (:) empfangen --------
+1860  C=ASC($(0),1) :  IF C<>58 THEN  GOTO 2170
+1870   REM ------ Record Laenge leesen ---------------- 
+1880  I=2 :  GOSUB 2100 : N=C
+1890   REM ------ Adresse der Daten leesen ------------
+1900   FOR I=4 TO 7 STEP 2 :  GOSUB 2100 : ADDR=(ADDR*256)+C :  NEXT 
+1910   REM ------ Record Typ leesen -------------------   
+1920  I=8 :  GOSUB 2100 :  IF (C<>0.AND.C<>1) THEN  GOTO 2180
+1930  R=C
+1940   REM ------ Checksumme berechnen ----------------
+1950  CK=(ADDR/256)+(ADDR.AND.0FFH)+N+R
+1960   FOR I=10 TO 10+(N*2) STEP 2 :  GOSUB 2100
+1970  CK=CK+C :  REM Checksumme aufrechnen
+1980   IF I>(9+N*2) THEN 2050 :  REM Checksumme nicht speichern
+1990   IF R=1 THEN 2050 :  REM Ende Record nicht speichern
+2000   REM ------ Adresse nach RAM setzen -------------
+2010   IF ADDR<S THEN ADDR=ADDR+S
+2020   IF ADDR>7FFFH THEN ADDR=ADDR-S :  GOTO 2020
+2030   REM ------ Daten speichern --------------------- 
+2040  XBY(ADDR)=C : ADDR=ADDR+1
+2050   NEXT 
+2060   REM ------ Checksumme pruefen ------------------ 
+2070  CK=CK.AND.0FFH :  IF CK<>0 THEN  GOTO 2190
+2080   IF R=1 THEN  GOTO 2210 :  REM HEX-File Ende?
+2090   GOTO 1840 :  REM Naechste Zeile
+2100   REM ------ ASCII-HEX nach DEZ wandeln ----------
+2110  B=ASC($(0),I)-48 :  IF B>9 THEN B=B-7
+2120  C=B*16
+2130  B=ASC($(0),I+1)-48 :  IF B>9 THEN B=B-7
+2140  C=C+B
+2150   RETURN 
+2160   REM ------ Fehlermeldungen --------------------- 
+2170   PRINT "Zeile ",L,": Zeichen",I,"nicht erlaubt!" :  GOTO 2210
+2180   PRINT "Zeile ",L,": Unbekannter Record Typ!",C :  GOTO 2210
+2190   PRINT "Zeile ",L,": Checksummen Fehler!",
+2200   PH0. ABS(CK-C)
+2210   GOTO 1550
+2220   REM ====== Memory Dump =========================
+2230   GOSUB 1500
+2240   PRINT "*** Speicher listen *********************" :  PRINT 
+2250  Z=0 : CK=0
+2260   REM ------ Eingabe -----------------------------
+2270   PRINT "Welcher Speicher soll gelistet werden?" :  PRINT 
+2280   PRINT " -1-  Interner Speicher"
+2290   PRINT " -2-  Externer Speicher"
+2300   PRINT " -3-  Programm Speicher" :  PRINT 
+2310   INPUT "Ihre Wahl   :",W
+2320   IF W=1 THEN M=0FFH ELSE M=0FFFFH
+2330   IF W>3 GOTO 130
+2340   INPUT "Startadresse:",ST
+2350   PRINT 
+2360   REM ------ Ausgabe -----------------------------
+2370   PRINT CHR(12) :  PRINT " Adr.    ",
+2380   IF W=3 THEN  PRINT "Code Memory   ",
+2390   IF W=2 THEN  PRINT "Ext. Memory   ",
+2400   IF W=1 THEN  PRINT "Int. Memory   ",
+2410   PRINT "HEX                  ASCII"
+2420   FOR ADDR=ST TO M STEP 8 : K=0
+2430   PH1. ADDR, :  PRINT " :",
+2440   REM ------ Hex-Daten ---------------------------
+2450   FOR B=0 TO 7
+2460   IF ADDR+B>M THEN  PRINT "    ", :  GOTO 2500
+2470   IF W=3 THEN  PH0. CBY(ADDR+B),
+2480   IF W=2 THEN  PH0. XBY(ADDR+B),
+2490   IF W=1 THEN  PH0. DBY(ADDR+B),
+2500   NEXT B
+2510   REM ------ ASCII-Daten -------------------------
+2520   PRINT " | ",
+2530   FOR B=0 TO 7
+2540   IF ADDR+B>M THEN  PRINT " ", :  GOTO 2600
+2550   IF W=3 THEN C=CBY(ADDR+B)
+2560   IF W=2 THEN C=XBY(ADDR+B)
+2570   IF W=1 THEN C=DBY(ADDR+B)
+2580   IF C<32.OR.C>126 THEN C=46
+2590   PRINT CHR(C),
+2600   NEXT B
+2610   PRINT " | "
+2620   REM ------ Weiter Abfrage ----------------------
+2630  Z=Z+1
+2640   IF Z=22 GOSUB 1590
+2650   IF K=ASC(N).OR.K=110 THEN ADDR=M : CK=1
+2660   IF Z=22 THEN Z=0 :  PRINT 
+2670   NEXT ADDR
+2680   IF CK=1 GOTO 130
+2690   GOSUB 1590 :  GOTO 130
+2700   END 
